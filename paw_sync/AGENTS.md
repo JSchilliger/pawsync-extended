@@ -1,0 +1,38 @@
+# Paw Sync Agent Instructions
+
+## Project Overview
+This project is "Paw Sync", a Flutter application for pet lifecycle management. Key technologies include Flutter, Riverpod, GoRouter, and Firebase.
+
+## IMPORTANT SETUP NOTE FOR USER:
+Due to limitations with the automated tooling environment, the agent cannot reliably run `flutter create` or `flutter pub get` without encountering issues that roll back changes.
+
+**After the agent completes the initial file and directory structure setup, YOU WILL NEED TO MANUALLY:**
+
+1.  **Navigate to the `paw_sync` directory in your terminal.**
+2.  **Run `flutter pub get`**. This will fetch all the necessary dependencies defined in `pubspec.yaml` and generate essential platform-specific files and the `.dart_tool` directory.
+3.  **Install FlutterFire CLI if you haven't already: `dart pub global activate flutterfire_cli`**
+4.  **Run `flutterfire configure`** from the `paw_sync` directory. This command will guide you to select your Firebase project and will generate `lib/firebase_options.dart` which is crucial for initializing Firebase. Ensure you select the correct Firebase project and platforms (iOS, Android, Web if applicable).
+5.  **If core platform directories (`android`, `ios`, `linux`, `macos`, `windows`, `web`) or other essential project files like `analysis_options.yaml` are missing after the previous steps, you might also need to run `flutter create . --project-name paw_sync` (note the dot) INSIDE the `paw_sync` directory.** This command will generate any missing platform-specific boilerplate and project files without overwriting your `lib` content, `pubspec.yaml`, or `README.md` if they already exist with content.
+
+The agent has written `lib/main.dart` to include Firebase initialization code expecting `firebase_options.dart` to be available after you complete these steps.
+
+## Development Guidelines
+1.  **Documentation:**
+    *   **Inline Comments:** Add detailed comments directly in the code. Explain the purpose of each file, class, method, and any complex logic.
+    *   **README.md:** The root `README.md` should be continuously updated to document the project's purpose, how to run it, and provide an overview of the architecture.
+2.  **Project Structure:** Adhere to the feature-first architecture. All files related to a specific feature (e.g., pet profiles) should be located within their own directory (e.g., `lib/features/pet_profile/`). This directory should contain sub-folders for screens, widgets, providers, and models as needed.
+3.  **Core Files:**
+    *   `lib/main.dart`: Main application entry point.
+    *   `lib/core/routing/app_router.dart`: Centralized GoRouter configuration. (To be created)
+    *   `lib/core/theme/theme.dart`: Application design system (colors, fonts, styles). (To be created)
+    *   `lib/core/localization/`: Directory for internationalization files (e.g., `lib/core/localization/l10n/app_en.arb`). (To be created)
+4.  **Firebase Setup:** Firebase configuration files (`google-services.json`, `GoogleService-Info.plist`) are managed by the user. Assume they are correctly placed for platform builds. Firebase initialization should occur in `main.dart` using `firebase_options.dart`.
+5.  **State Management (Riverpod):** Use Riverpod providers for state management. For complex states, prefer `StateNotifierProvider` or `AsyncNotifierProvider`.
+6.  **Dependencies:** Add new dependencies to `paw_sync/pubspec.yaml`.
+7.  **Testing:** Add relevant unit, widget, and integration tests for new features or bug fixes.
+8.  **Commits:** Use descriptive commit messages. For larger features, break them down into smaller, logical commits.
+
+## Sandbox / Tooling Notes
+*   The Flutter SDK is installed at `/tmp/flutter_sdk/flutter`. Ensure `$PATH` includes `/tmp/flutter_sdk/flutter/bin`.
+
+*(This AGENTS.md can be updated as more specific guidelines emerge.)*

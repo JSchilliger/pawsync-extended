@@ -1,0 +1,24 @@
+# Configuration file for Flutter's internationalization tools.
+# This file tells the `flutter gen-l10n` command where to find ARB files
+# and where to output the generated Dart localization code.
+
+arb-dir: lib/core/localization/l10n # Directory where the ARB files (.arb) are located.
+template-arb-file: app_en.arb # The ARB file that serves as the template for all other languages.
+output-localization-file: app_localizations.dart # The name of the Dart file to be generated.
+output-class: AppLocalizations # The name of the class to be generated in the output Dart file.
+# nullable-getter: false # Set to true if you want getters for messages to be nullable. Defaults to false.
+# synthetic-package: false # Set to false if a physical `app_localizations.dart` file is preferred.
+                           # When true (default), a synthetic package is used, which is generally recommended.
+                           # For this project, we'll keep it true (default) unless issues arise.
+header: | # Optional header to be included at the top of the generated Dart file.
+  // GENERATED CODE - DO NOT MODIFY BY HAND
+  // ignore_for_file: prefer_single_quotes, public_member_api_docs, lines_longer_than_80_chars, implicit_dynamic_list_literal, implicit_dynamic_map_literal, cascade_invocations
+
+# Optional: If you want to use a custom header for specific files.
+# header-file: header.txt
+
+# Optional: If you want to specify the preferred supported locales.
+# This can also be done in the MaterialApp widget.
+# preferred-supported-locales:
+#   - en
+#   - fr

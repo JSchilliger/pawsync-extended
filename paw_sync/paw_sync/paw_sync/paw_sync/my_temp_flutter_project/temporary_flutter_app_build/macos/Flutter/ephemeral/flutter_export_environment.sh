@@ -1,0 +1,12 @@
+#!/bin/sh
+# This is a generated file; do not edit or check into version control.
+export "FLUTTER_ROOT=/tmp/flutter_sdk/flutter"
+export "FLUTTER_APPLICATION_PATH=/app/paw_sync/paw_sync/paw_sync/paw_sync/my_temp_flutter_project/temporary_flutter_app_build"
+export "COCOAPODS_PARALLEL_CODE_SIGN=true"
+export "FLUTTER_BUILD_DIR=build"
+export "FLUTTER_BUILD_NAME=1.0.0"
+export "FLUTTER_BUILD_NUMBER=1"
+export "DART_OBFUSCATION=false"
+export "TRACK_WIDGET_CREATION=true"
+export "TREE_SHAKE_ICONS=false"
+export "PACKAGE_CONFIG=.dart_tool/package_config.json"

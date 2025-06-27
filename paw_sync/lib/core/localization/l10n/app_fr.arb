@@ -1,0 +1,15 @@
+{
+  "@@locale": "fr",
+  "appTitle": "Paw Sync",
+  "@appTitle": {
+    "description": "Le titre de l'application"
+  },
+  "welcomeMessage": "Bienvenue sur Paw Sync !",
+  "@welcomeMessage": {
+    "description": "Un message de bienvenue générique"
+  },
+  "homePageTitle": "Accueil",
+  "@homePageTitle": {
+    "description": "Titre pour la page d'accueil"
+  }
+}
