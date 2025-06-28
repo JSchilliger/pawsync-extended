@@ -9,17 +9,38 @@ class SplashScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Basic placeholder UI for the splash screen
-    return const Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            CircularProgressIndicator(), // Show a loading spinner
-            SizedBox(height: 20),
-            Text('Paw Sync'), // App name
-            Text('Loading...'),    // Loading message
-          ],
+    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Scaffold(
+      body: SafeArea( // Added SafeArea
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              // Placeholder App Logo
+              Icon(
+                Icons.pets, // Placeholder app logo icon
+                size: 80,
+                color: colorScheme.primary,
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Paw Sync',
+                style: textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.primary,
+                ),
+              ),
+              const SizedBox(height: 12),
+              const CircularProgressIndicator(),
+              const SizedBox(height: 16),
+              Text(
+                'Loading...',
+                style: textTheme.titleMedium,
+              ),
+            ],
+          ),
         ),
       ),
     );
