@@ -1,22 +1,25 @@
 // lib/features/pet_profile/providers/pet_providers.dart
 
+import 'package:cloud_firestore/cloud_firestore.dart'; // For FirebaseFirestore
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:paw_sync/features/pet_profile/models/pet_model.dart';
 import 'package:paw_sync/features/pet_profile/repositories/pet_repository.dart';
+import 'package:paw_sync/features/pet_profile/repositories/firebase_pet_repository.dart'; // Import concrete implementation
+// It's good practice to also import the auth providers if currentUserIdProvider depends on them.
+// For now, currentUserIdProvider is a placeholder, but in a real app:
+// import 'package:paw_sync/core/auth/providers/auth_providers.dart';
 
-// This would be the actual implementation, e.g., FirebasePetRepository.
-// For now, it's not implemented, so attempting to use petRepositoryProvider
-// directly will result in an UnimplementedError or similar, which is expected
-// at this stage as we are defining API/interfaces only.
+
+// Provider to expose the FirebaseFirestore instance.
+final firebaseFirestoreProvider = Provider<FirebaseFirestore>((ref) {
+  return FirebaseFirestore.instance;
+});
+
 // Provider for the PetRepository implementation.
-// Other providers will use this to interact with the pet data layer.
+// Now returns an instance of FirebasePetRepository.
 final petRepositoryProvider = Provider<PetRepository>((ref) {
-  // In a real application, you would return an instance of a concrete implementation:
-  // return FirebasePetRepository(ref.read(firestoreProvider));
-  // Or:
-  // return MockPetRepository();
-  throw UnimplementedError(
-      'PetRepository implementation not provided yet. This is an API-only definition.');
+  final firestoreInstance = ref.watch(firebaseFirestoreProvider);
+  return FirebasePetRepository(firestoreInstance);
 });
 
 // Provider to fetch a list of pets for a given owner.
@@ -44,55 +47,67 @@ final petByIdProvider = FutureProvider.autoDispose.family<Pet?, String>((ref, pe
 // It's often better to manage state mutations (add, update, delete) through
 // StateNotifierProviders or AsyncNotifierProviders that encapsulate business logic
 // and expose methods to perform these actions.
-// For simplicity in this "API-only" definition phase, we might define simple
-// providers that directly call repository methods, but in a full app,
-// dedicated Notifiers are preferred for managing state and side effects.
+// For simplicity at this stage, we keep simple providers that directly call repository methods.
+// In a full app, dedicated Notifiers are preferred for managing state and side effects.
 
-// Example of how you might structure an "add pet" operation.
-// This provider could be called from a UI event.
-// Using a simple FutureProvider here for API definition.
-// In a real app, this would likely be a method within a StateNotifier or AsyncNotifier.
+// Provider for adding a pet.
 final addPetProvider = Provider((ref) {
   final petRepository = ref.watch(petRepositoryProvider);
   return (Pet pet) async {
     // Potentially add more logic here: validation, analytics, etc.
     await petRepository.addPet(pet);
-    // After adding, you might want to refresh relevant data providers.
-    // For example, if you have a provider that lists pets, you'd invalidate it.
-    // ref.invalidate(petsProvider); // Invalidate if 'petsProvider' was not family based or ownerId is globally available
+    // After adding, invalidate providers that show lists of pets to trigger a refresh.
+    final currentOwnerId = ref.read(currentUserIdProvider);
+    if (currentOwnerId != null) {
+      ref.invalidate(petsProvider(currentOwnerId));
+      ref.invalidate(petsStreamProvider(currentOwnerId)); // Though streams might auto-update, invalidation ensures freshness if needed
+    }
+    // If there's a global pets list provider not dependent on ID, invalidate that too.
+    // ref.invalidate(allPetsProvider); // Example
   };
 });
 
+// Provider for updating a pet.
 final updatePetProvider = Provider((ref) {
   final petRepository = ref.watch(petRepositoryProvider);
   return (Pet pet) async {
     await petRepository.updatePet(pet);
-    // Invalidate relevant providers
-    // ref.invalidate(petsProvider);
-    // ref.invalidate(petByIdProvider(pet.id));
+    // Invalidate relevant providers to reflect the update
+    final currentOwnerId = ref.read(currentUserIdProvider);
+    if (currentOwnerId != null) {
+      ref.invalidate(petsProvider(currentOwnerId));
+      ref.invalidate(petsStreamProvider(currentOwnerId));
+    }
+    ref.invalidate(petByIdProvider(pet.id)); // Invalidate the specific pet entry
   };
 });
 
+// Provider for deleting a pet.
 final deletePetProvider = Provider((ref) {
   final petRepository = ref.watch(petRepositoryProvider);
   return (String petId) async {
+    // Store ownerId before deletion if needed for invalidating owner-specific lists
+    final petToDelete = await ref.read(petByIdProvider(petId).future);
+    final ownerId = petToDelete?.ownerId ?? ref.read(currentUserIdProvider);
+
     await petRepository.deletePet(petId);
     // Invalidate relevant providers
-    // ref.invalidate(petsProvider);
+    if (ownerId != null) {
+      ref.invalidate(petsProvider(ownerId));
+      ref.invalidate(petsStreamProvider(ownerId));
+    }
+    ref.invalidate(petByIdProvider(petId)); // This pet no longer exists
   };
 });
 
 /// Placeholder for the current user's ID.
-/// In a real app, this would come from an authentication provider.
-/// This is needed for family providers that depend on ownerId.
-/// For API definition, we can make it a simple provider that would need
-/// to be overridden or properly implemented later.
+/// In a real app, this would come from an authentication provider like `currentUserModelProvider.uid`.
 final currentUserIdProvider = Provider<String?>((ref) {
-  // In a real app:
-  // final authState = ref.watch(authStateChangesProvider); // Assuming authStateChangesProvider exists
-  // return authState.asData?.value?.uid;
-  print("Warning: currentUserIdProvider is returning a placeholder null value.");
-  return null; // Placeholder
+  // Example of how it might be connected in a real app:
+  // final userModel = ref.watch(currentUserModelProvider); // Assuming currentUserModelProvider is defined in auth_providers
+  // return userModel?.uid;
+  print("Warning: currentUserIdProvider is returning a placeholder null value for PetProfile.");
+  return null; // Placeholder - MUST BE REPLACED LATER
 });
 
 /// Provider for the current user's pets list.
@@ -100,9 +115,9 @@ final currentUserIdProvider = Provider<String?>((ref) {
 final currentUserPetsProvider = FutureProvider.autoDispose<List<Pet>>((ref) {
   final userId = ref.watch(currentUserIdProvider);
   if (userId == null) {
-    // If no user is logged in, return an empty list or throw an error,
-    // depending on how you want to handle this case.
-    // Or, this provider could be conditional based on auth state.
+    // If no user is logged in, return an empty list.
+    // The UI should ideally not call this if no user is logged in,
+    // or handle the empty/error state gracefully.
     return Future.value([]);
   }
   return ref.watch(petsProvider(userId).future);

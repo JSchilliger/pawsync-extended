@@ -1,31 +1,39 @@
 // lib/core/auth/providers/auth_providers.dart
 // This file contains Riverpod providers related to user authentication.
 
-import 'package:firebase_auth/firebase_auth.dart' show User; // Only for User type
+import 'package:firebase_auth/firebase_auth.dart' as fb_auth; // Aliased for clarity
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:paw_sync/core/auth/models/user_model.dart';
 import 'package:paw_sync/core/auth/repositories/auth_repository.dart';
+import 'package:paw_sync/core/auth/repositories/firebase_auth_repository.dart'; // Import concrete implementation
+
+// Provider to expose the FirebaseAuth instance.
+// This allows other providers or widgets to access FirebaseAuth if needed directly,
+// though interaction should primarily be through the AuthRepository.
+final firebaseAuthProvider = Provider<fb_auth.FirebaseAuth>((ref) {
+  return fb_auth.FirebaseAuth.instance;
+});
 
 // Provider for the AuthRepository implementation.
-// Concrete implementation (e.g., FirebaseAuthRepository) will be provided here.
+// Now returns an instance of FirebaseAuthRepository.
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
-  // In a real application, you would return an instance of a concrete implementation:
-  // return FirebaseAuthRepository(FirebaseAuth.instance);
-  // Or for testing:
-  // return MockAuthRepository();
-  throw UnimplementedError(
-      'AuthRepository implementation not provided yet. This is an API-only definition.');
+  final firebaseAuthInstance = ref.watch(firebaseAuthProvider);
+  // If GoogleSignIn was fully implemented, it would be passed here too:
+  // final googleSignInInstance = ref.watch(googleSignInProvider); // Assuming a googleSignInProvider
+  // return FirebaseAuthRepository(firebaseAuthInstance, googleSignInInstance);
+  return FirebaseAuthRepository(firebaseAuthInstance);
 });
 
 // Provider for the stream of authentication state changes from the repository.
+// Using fb_auth.User? to match the type from FirebaseAuth.
 // UI widgets can listen to this provider to react to login/logout events.
-final authStateChangesProvider = StreamProvider<User?>((ref) {
+final authStateChangesProvider = StreamProvider<fb_auth.User?>((ref) {
   final authRepository = ref.watch(authRepositoryProvider);
   return authRepository.authStateChanges;
 });
 
 // Provider to get the current Firebase User object from the repository.
-final currentUserProvider = Provider<User?>((ref) {
+final currentUserProvider = Provider<fb_auth.User?>((ref) {
   final authRepository = ref.watch(authRepositoryProvider);
   return authRepository.currentUser;
 });
@@ -35,12 +43,13 @@ final currentUserProvider = Provider<User?>((ref) {
 final currentUserModelProvider = Provider<UserModel?>((ref) {
   final firebaseUser = ref.watch(currentUserProvider);
   if (firebaseUser != null) {
-    // This mapping could be more sophisticated or happen in the repository.
+    // This mapping could be more sophisticated, potentially done within UserModel or a dedicated mapper.
     return UserModel(
       uid: firebaseUser.uid,
       email: firebaseUser.email,
       displayName: firebaseUser.displayName,
       photoUrl: firebaseUser.photoURL,
+      // isEmailVerified: firebaseUser.emailVerified, // Example if added to UserModel
     );
   }
   return null;
@@ -78,6 +87,7 @@ final emailPasswordSignUpProvider = Provider((ref) {
 final googleSignInProvider = Provider((ref) {
   final authRepository = ref.watch(authRepositoryProvider);
   return () async {
+    // Note: This will currently throw UnimplementedError from FirebaseAuthRepository
     return await authRepository.signInWithGoogle();
   };
 });
@@ -108,13 +118,13 @@ final isLoggedInProvider = Provider<bool>((ref) {
 /*
 // Example structure for an AuthNotifier (AsyncNotifier):
 // This is a good pattern for handling async operations with loading/error states.
-final authNotifierProvider = AsyncNotifierProvider<AuthNotifier, User?>(() {
+final authNotifierProvider = AsyncNotifierProvider<AuthNotifier, fb_auth.User?>(() {
   return AuthNotifier();
 });
 
-class AuthNotifier extends AsyncNotifier<User?> {
+class AuthNotifier extends AsyncNotifier<fb_auth.User?> {
   @override
-  Future<User?> build() async {
+  Future<fb_auth.User?> build() async {
     // Initialize with the current user state by watching authStateChangesProvider
     final authState = ref.watch(authStateChangesProvider);
     return authState.asData?.value;
