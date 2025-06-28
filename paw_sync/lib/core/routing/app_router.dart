@@ -6,9 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart'; // Required for using Riverpod with GoRouter redirect
 import 'package:go_router/go_router.dart';
 // import 'package:paw_sync/core/auth/providers/auth_providers.dart'; // Import auth providers
-// import 'package:paw_sync/core/auth/screens/login_screen.dart';
-// import 'package:paw_sync/core/auth/screens/splash_screen.dart';
-// import 'package:paw_sync/features/pet_profile/screens/pet_profile_screen.dart'; // Placeholder Home
+import 'package:paw_sync/core/auth/screens/login_screen.dart';
+import 'package:paw_sync/core/auth/screens/splash_screen.dart';
+import 'package:paw_sync/features/pet_profile/screens/pet_profile_screen.dart'; // Placeholder Home
 
 // TODO: Import other screens as they are created.
 
@@ -16,25 +16,26 @@ import 'package:go_router/go_router.dart';
 // Using a class for route names helps avoid typos and provides a single source of truth.
 class AppRoutes {
   static const String splash = '/'; // Initial route
-  static const String login = '/login'; // Commented out for now
+  static const String login = '/login';
   static const String home = '/home'; // Represents the main screen after login, e.g., pet profiles
   // Add other route names here e.g.
   // static const String petDetails = '/pet/:id'; // Example with path parameter
 }
 
-/// A placeholder screen.
-class PlaceholderScreen extends StatelessWidget {
-  final String title;
-  const PlaceholderScreen({super.key, required this.title});
+// PlaceholderScreen is no longer needed here as we are using actual screen files.
+// /// A placeholder screen.
+// class PlaceholderScreen extends StatelessWidget {
+//   final String title;
+//   const PlaceholderScreen({super.key, required this.title});
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: Center(child: Text('This is the $title screen.')),
-    );
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       appBar: AppBar(title: Text(title)),
+//       body: Center(child: Text('This is the $title screen.')),
+//     );
+//   }
+// }
 
 /// The route configuration for the application.
 class AppRouter {
@@ -46,7 +47,7 @@ class AppRouter {
     // final authState = ref.watch(authStateChangesProvider); // Commented out auth-dependent redirect
 
     return GoRouter(
-      initialLocation: AppRoutes.splash, // Start with splash or a simple home
+      initialLocation: AppRoutes.splash,
       debugLogDiagnostics: true, // Log diagnostic info for GoRouter. Disable in production.
 
       // redirect: (BuildContext context, GoRouterState state) { // Commented out auth-dependent redirect
@@ -73,34 +74,32 @@ class AppRouter {
       // },
 
       routes: <RouteBase>[
-        // Simplified Splash Screen Route to a Placeholder
+        // Splash Screen Route
         GoRoute(
           path: AppRoutes.splash,
-          name: 'splash_placeholder', // Changed name to avoid conflict if original splash is restored
+          name: AppRoutes.splash, // Using actual route name
           builder: (BuildContext context, GoRouterState state) {
-            // For now, SplashScreen is not defined, use a placeholder
-            return const PlaceholderScreen(title: "Splash Screen");
+            return const SplashScreen();
           },
         ),
 
-        // Simplified Home Screen Route
+        // Home Screen Route
         GoRoute(
           path: AppRoutes.home,
-          name: 'home_placeholder', // Changed name to avoid conflict if original home is restored
+          name: AppRoutes.home, // Using actual route name
           builder: (BuildContext context, GoRouterState state) {
-            // For now, PetProfileScreen is not defined, use a placeholder
-            return const PlaceholderScreen(title: "Home Screen");
+            return const PetProfileScreen();
           },
         ),
 
-        // Login Screen Route (Commented out as LoginScreen is not defined yet)
-        // GoRoute(
-        //   path: AppRoutes.login,
-        //   name: AppRoutes.login,
-        //   builder: (BuildContext context, GoRouterState state) {
-        //     return const LoginScreen();
-        //   },
-        // ),
+        // Login Screen Route
+        GoRoute(
+          path: AppRoutes.login,
+          name: AppRoutes.login, // Using actual route name
+          builder: (BuildContext context, GoRouterState state) {
+            return const LoginScreen();
+          },
+        ),
       ],
 
       // TODO: Add an error builder for handling unknown routes gracefully.
