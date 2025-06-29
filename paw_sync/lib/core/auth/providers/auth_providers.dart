@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:paw_sync/core/auth/models/user_model.dart';
 import 'package:paw_sync/core/auth/repositories/auth_repository.dart';
 import 'package:paw_sync/core/auth/repositories/firebase_auth_repository.dart'; // Import concrete implementation
+import 'package:paw_sync/core/auth/notifiers/auth_notifier.dart'; // Import the AuthNotifier
 
 // Provider to expose the FirebaseAuth instance.
 // This allows other providers or widgets to access FirebaseAuth if needed directly,
@@ -115,12 +116,16 @@ final isLoggedInProvider = Provider<bool>((ref) {
   return ref.watch(currentUserProvider) != null;
 });
 
+// Provider for the AuthNotifier.
+// This is the primary provider UI should interact with for auth operations and state.
+final authNotifierProvider =
+    AsyncNotifierProvider<AuthNotifier, fb_auth.User?>(AuthNotifier.new);
+
 /*
-// Example structure for an AuthNotifier (AsyncNotifier):
-// This is a good pattern for handling async operations with loading/error states.
-final authNotifierProvider = AsyncNotifierProvider<AuthNotifier, fb_auth.User?>(() {
-  return AuthNotifier();
-});
+// The commented out AuthNotifier class structure below is now implemented in
+// lib/core/auth/notifiers/auth_notifier.dart
+// Keeping it here for historical reference during this dev session is fine,
+// but it would typically be removed once the actual class is in its own file.
 
 class AuthNotifier extends AsyncNotifier<fb_auth.User?> {
   @override
