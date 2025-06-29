@@ -47,10 +47,46 @@ dependencies:
   # Linting: flutter_lints provides a recommended set of linting rules to encourage good coding practices.
   flutter_lints: ^4.0.0
 
+  # --- TODO: Potential Future Dependencies ---
+  # TODO (Auth): Add google_sign_in for Google authentication.
+  # google_sign_in: ^latest_version
+
+  # TODO (UI/UX): Add image_picker for selecting photos (pet profiles, user profiles).
+  # image_picker: ^latest_version
+
+  # TODO (UI/UX): Add intl_phone_field for formatted phone number input if needed for user/business profiles.
+  # intl_phone_field: ^latest_version # Or other phone input packages like phone_form_field
+
+  # TODO (Utility): Add uuid for generating unique IDs client-side (e.g., for MedicalEvent, other local models).
+  # uuid: ^latest_version
+
+  # TODO (Maps/Location): Add google_maps_flutter or flutter_map if map features are planned.
+  # google_maps_flutter: ^latest_version # Requires platform setup
+  # geolocator: ^latest_version # For getting user's current location
+
+  # TODO (Notifications): Add flutter_local_notifications for local reminder/scheduled notifications.
+  # flutter_local_notifications: ^latest_version
+
+  # TODO (Backend/Push Notifications): Consider firebase_messaging for push notifications from Firebase.
+  # firebase_messaging: ^latest_version # Requires more setup
+
+  # TODO (State/Models): Consider freezed for immutable models and unions if boilerplate becomes an issue.
+  # freezed_annotation: ^latest_version
+  # json_annotation: ^latest_version # If using freezed with json_serializable
+
 # Defines development-specific dependencies, such as testing frameworks.
 dev_dependencies:
   flutter_test: # Provides testing utilities for Flutter widgets.
     sdk: flutter # Sourced from the Flutter SDK.
+
+  # --- TODO: Potential Future Dev Dependencies ---
+  # TODO (State/Models): Add build_runner and freezed if using freezed.
+  # build_runner: ^latest_version
+  # freezed: ^latest_version
+  # json_serializable: ^latest_version # If using freezed with json_serializable
+
+  # TODO (Testing): Add mockito or mocktail for generating mocks for testing repositories/services.
+  # mockito: ^latest_version # or mocktail: ^latest_version
 
 # Flutter-specific configuration section.
 flutter:
@@ -63,8 +99,9 @@ flutter:
   # To add assets (like images) to your application, add an assets section.
   # Example:
   # assets:
-  #   - images/a_dot_burr.jpeg
-  #   - images/a_dot_ham.jpeg
+  #   - assets/images/ # For app logo, placeholder images, etc.
+  #   - assets/images/google_logo.png # Example specific asset
+  #   - assets/images/dog_placeholder.png
 
   # To add custom fonts to your application, add a fonts section here,
   # in this "flutter" section. Each entry in this list should have a
