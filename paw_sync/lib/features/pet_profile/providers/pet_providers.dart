@@ -5,9 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:paw_sync/features/pet_profile/models/pet_model.dart';
 import 'package:paw_sync/features/pet_profile/repositories/pet_repository.dart';
 import 'package:paw_sync/features/pet_profile/repositories/firebase_pet_repository.dart'; // Import concrete implementation
-// It's good practice to also import the auth providers if currentUserIdProvider depends on them.
-// For now, currentUserIdProvider is a placeholder, but in a real app:
-// import 'package:paw_sync/core/auth/providers/auth_providers.dart';
+import 'package:paw_sync/core/auth/providers/auth_providers.dart'; // Import auth providers for currentUserModelProvider
 
 
 // Provider to expose the FirebaseFirestore instance.
@@ -100,14 +98,13 @@ final deletePetProvider = Provider((ref) {
   };
 });
 
-/// Placeholder for the current user's ID.
-/// In a real app, this would come from an authentication provider like `currentUserModelProvider.uid`.
+/// Provider for the current user's ID.
+/// This now correctly sources the UID from the authenticated user's model.
 final currentUserIdProvider = Provider<String?>((ref) {
-  // Example of how it might be connected in a real app:
-  // final userModel = ref.watch(currentUserModelProvider); // Assuming currentUserModelProvider is defined in auth_providers
-  // return userModel?.uid;
-  print("Warning: currentUserIdProvider is returning a placeholder null value for PetProfile.");
-  return null; // Placeholder - MUST BE REPLACED LATER
+  // Watch the currentUserModelProvider from auth_providers.dart
+  final userModel = ref.watch(currentUserModelProvider);
+  // Return the uid from the UserModel, or null if no user is logged in / no model available.
+  return userModel?.uid;
 });
 
 /// Provider for the current user's pets list.
