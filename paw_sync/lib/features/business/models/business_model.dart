@@ -1,19 +1,8 @@
 // lib/features/business/models/business_model.dart
 
 import 'package:flutter/foundation.dart';
+import 'package:paw_sync/core/utils/enums.dart'; // Import centralized enums
 // import 'package:cloud_firestore/cloud_firestore.dart'; // For GeoPoint if used
-
-// Enum for different types of businesses
-enum BusinessType { vet, groomer, sitter, store, park, other }
-
-// Helper to convert BusinessType to string and back for Firestore
-String businessTypeToString(BusinessType type) => type.toString().split('.').last;
-BusinessType businessTypeFromString(String typeString) {
-  return BusinessType.values.firstWhere(
-    (e) => e.toString().split('.').last == typeString,
-    orElse: () => BusinessType.other,
-  );
-}
 
 @immutable
 class BusinessModel {

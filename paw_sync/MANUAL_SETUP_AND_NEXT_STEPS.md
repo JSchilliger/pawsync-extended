@@ -127,3 +127,42 @@ Once the manual setup is complete and the app can compile and run with Firebase 
 ---
 
 This guide should help you bridge the gap between the agent-generated code and a runnable, developable application state. Remember to commit your local changes (like `firebase_options.dart` and platform config files) to your version control system.
+
+## 5. Conceptual Error Handling Strategy
+
+A consistent approach to error handling improves user experience and maintainability.
+
+*   **Repository Exceptions:**
+    *   Custom exceptions like `AuthRepositoryException`, `PetRepositoryException`, `BusinessRepositoryException`, etc., are defined. These wrap underlying exceptions (e.g., `FirebaseException`) and can carry specific error codes or messages from the source.
+
+*   **Notifier/State Management:**
+    *   `AsyncNotifier` (and similar state management solutions like `StateNotifier` with `AsyncValue`) are used to manage asynchronous operations (e.g., in `AuthNotifier`).
+    *   These notifiers expose state as `AsyncValue<T>` (e.g., `AsyncLoading`, `AsyncData<T>`, `AsyncError<T>`).
+    *   UI components will listen to these notifiers and can use `state.when()` or similar patterns to display different UI for loading, data, and error states.
+
+*   **Mapping Exceptions to User-Friendly Messages:**
+    *   Create a utility function or extension method to map known error codes/types from repository exceptions to user-friendly, localized messages.
+        *   Example: `FirebaseException` codes like `user-not-found`, `wrong-password`, `email-already-in-use`, `unavailable` (for network issues) can be mapped to clear messages.
+        *   Generic messages for unknown errors: "An unexpected error occurred. Please try again."
+    *   This mapping can occur within the Notifier when an error is caught, or the UI can call this utility when handling an `AsyncError` state.
+
+*   **Error Presentation in UI:**
+    *   **Inline Form Errors:** For validation errors (e.g., invalid email format, password too short), display error messages directly beneath the respective `TextFormField`.
+    *   **SnackBars/Toasts:** For non-critical errors or successful operations that need brief confirmation (e.g., "Profile updated," "Reminder saved," "Could not connect to server, please check your connection").
+        *   Use different colors/icons for success, warning, error.
+    *   **Dialogs:** For critical errors that prevent an operation or require user acknowledgement (e.g., "Failed to create account: This email is already in use.", "Action failed due to a server error. Please try again later.").
+    *   **Full Screen Error States:** If a primary data fetch fails for a screen (e.g., cannot load pet profiles), display a dedicated error UI with a "Retry" button. The `AsyncValue.when()` pattern is excellent for this.
+    *   **Loading Indicators:** Clearly indicate loading states (e.g., circular progress indicators on buttons during an action, shimmer effects for loading lists).
+
+*   **Global Error Handling/Logging (Advanced):**
+    *   Consider a global error listener or utility (e.g., using `PlatformDispatcher.instance.onError` or a Riverpod observer) to catch unhandled exceptions.
+    *   Log unexpected errors to a crash reporting service (e.g., Firebase Crashlytics, Sentry) for debugging.
+    *   For critical unhandled errors, a generic "Oops, something went wrong" dialog might be shown, prompting the user to restart or report.
+
+*   **Specific Error Scenarios to Plan For:**
+    *   Network connectivity issues.
+    *   Firebase specific errors (permissions denied, quotas exceeded, specific auth errors).
+    *   Validation errors (client-side).
+    *   Unexpected server errors.
+
+This strategy aims to provide informative and non-disruptive feedback to the user, helping them understand what went wrong and what to do next, while also aiding developers in diagnosing issues.

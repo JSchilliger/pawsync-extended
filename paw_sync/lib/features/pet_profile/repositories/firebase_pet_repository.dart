@@ -1,17 +1,18 @@
 // lib/features/pet_profile/repositories/firebase_pet_repository.dart
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:paw_sync/core/utils/constants.dart'; // Import constants
 import 'package:paw_sync/features/pet_profile/models/pet_model.dart';
 import 'package:paw_sync/features/pet_profile/repositories/pet_repository.dart';
 
 class FirebasePetRepository implements PetRepository {
   final FirebaseFirestore _firestore;
-  static const String petsCollectionPath = 'pets'; // Path to the pets collection
+  // static const String petsCollectionPath = 'pets'; // Replaced by kPetsCollection
 
   FirebasePetRepository(this._firestore);
 
   CollectionReference<Pet> get _petsCollection =>
-      _firestore.collection(petsCollectionPath).withConverter<Pet>(
+      _firestore.collection(kPetsCollection).withConverter<Pet>( // Use constant
             fromFirestore: (snapshot, _) => Pet.fromJson(snapshot.data()!),
             toFirestore: (pet, _) => pet.toJson(),
           );

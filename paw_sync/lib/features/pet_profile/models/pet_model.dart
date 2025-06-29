@@ -1,6 +1,7 @@
 // lib/features/pet_profile/models/pet_model.dart
 
 import 'package:flutter/foundation.dart';
+import 'package:paw_sync/core/utils/enums.dart'; // For PetSpecies, if/when species field is refactored
 
 /// Represents a pet in the Paw Sync application.
 ///
