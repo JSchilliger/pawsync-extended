@@ -1,0 +1,124 @@
+# This file defines the project's metadata, dependencies, and Flutter-specific configurations.
+# It's the first file Flutter build tools look at to understand the project.
+
+name: paw_sync # The name of the Flutter package.
+description: A new Flutter project for Paw Sync. # A brief description of the project.
+publish_to: 'none' # Prevents accidental publishing to pub.dev. Remove if publishing is intended.
+
+version: 1.0.0+1 # The version of the application. Follows semantic versioning.
+
+environment:
+  sdk: '>=3.3.0 <4.0.0' # Specifies the Dart SDK version constraints for this project.
+
+# Defines the external packages and Flutter SDK itself that this project depends on.
+dependencies:
+  flutter:
+    sdk: flutter # Indicates that this project uses the Flutter SDK.
+
+  # flutter_localizations enables internationalization (i18n) for Flutter widgets.
+  # It's used in conjunction with the intl package for generating localized messages.
+  flutter_localizations:
+    sdk: flutter
+
+  # State Management: Riverpod is used for flexible and robust state management.
+  # riverpod: Core package providing the fundamental state management capabilities.
+  # flutter_riverpod: Provides Flutter-specific bindings and widgets for Riverpod.
+  riverpod: ^2.5.1
+  flutter_riverpod: ^2.5.1
+
+  # Navigation: go_router is used for declarative routing and navigation.
+  # It simplifies complex navigation scenarios and deep linking.
+  go_router: ^14.0.2
+
+  # Firebase: Backend-as-a-Service for authentication, database, storage, etc.
+  # firebase_core: Required to initialize Firebase and use other Firebase plugins.
+  firebase_core: ^3.0.0
+  # firebase_auth: For user authentication (Email/Password, Google Sign-In).
+  firebase_auth: ^5.0.0
+  # cloud_firestore: For NoSQL cloud database storage.
+  cloud_firestore: ^5.0.0
+  # firebase_storage: For storing user-uploaded files like pet photos and documents.
+  firebase_storage: ^12.0.0
+
+  # Internationalization: intl package provides tools for internationalization and localization.
+  # Used by flutter_localizations and for custom date/number formatting.
+  intl: ^0.19.0 # Version needs to be compatible with flutter_localizations
+
+  # Linting: flutter_lints provides a recommended set of linting rules to encourage good coding practices.
+  flutter_lints: ^4.0.0
+
+  # --- TODO: Potential Future Dependencies ---
+  # TODO (Auth): Add google_sign_in for Google authentication.
+  # google_sign_in: ^latest_version
+
+  # TODO (UI/UX): Add image_picker for selecting photos (pet profiles, user profiles).
+  # image_picker: ^latest_version
+
+  # TODO (UI/UX): Add intl_phone_field for formatted phone number input if needed for user/business profiles.
+  # intl_phone_field: ^latest_version # Or other phone input packages like phone_form_field
+
+  # TODO (Utility): Add uuid for generating unique IDs client-side (e.g., for MedicalEvent, other local models).
+  # uuid: ^latest_version
+
+  # TODO (Maps/Location): Add google_maps_flutter or flutter_map if map features are planned.
+  # google_maps_flutter: ^latest_version # Requires platform setup
+  # geolocator: ^latest_version # For getting user's current location
+
+  # TODO (Notifications): Add flutter_local_notifications for local reminder/scheduled notifications.
+  # flutter_local_notifications: ^latest_version
+
+  # TODO (Backend/Push Notifications): Consider firebase_messaging for push notifications from Firebase.
+  # firebase_messaging: ^latest_version # Requires more setup
+
+  # TODO (State/Models): Consider freezed for immutable models and unions if boilerplate becomes an issue.
+  # freezed_annotation: ^latest_version
+  # json_annotation: ^latest_version # If using freezed with json_serializable
+
+# Defines development-specific dependencies, such as testing frameworks.
+dev_dependencies:
+  flutter_test: # Provides testing utilities for Flutter widgets.
+    sdk: flutter # Sourced from the Flutter SDK.
+
+  # --- TODO: Potential Future Dev Dependencies ---
+  # TODO (State/Models): Add build_runner and freezed if using freezed.
+  # build_runner: ^latest_version
+  # freezed: ^latest_version
+  # json_serializable: ^latest_version # If using freezed with json_serializable
+
+  # TODO (Testing): Add mockito or mocktail for generating mocks for testing repositories/services.
+  # mockito: ^latest_version # or mocktail: ^latest_version
+
+# Flutter-specific configuration section.
+flutter:
+  # This line enables generation of localization files from ARB files.
+  # It should be set to true to use the `flutter gen-l10n` command.
+  generate: true
+
+  uses-material-design: true # Indicates that the project uses Material Design icons and components.
+
+  # To add assets (like images) to your application, add an assets section.
+  # Example:
+  # assets:
+  #   - assets/images/ # For app logo, placeholder images, etc.
+  #   - assets/images/google_logo.png # Example specific asset
+  #   - assets/images/dog_placeholder.png
+
+  # To add custom fonts to your application, add a fonts section here,
+  # in this "flutter" section. Each entry in this list should have a
+  # "family" key with the font family name, and a "fonts" key with a
+  # list giving the asset and other descriptors for the font. For
+  # example:
+  # fonts:
+  #   - family: Schyler
+  #     fonts:
+  #       - asset: fonts/Schyler-Regular.ttf
+  #       - asset: fonts/Schyler-Italic.ttf
+  #         style: italic
+  #   - family: Trajan Pro
+  #     fonts:
+  #       - asset: fonts/TrajanPro.ttf
+  #       - asset: fonts/TrajanPro_Bold.ttf
+  #         weight: 700
+  #
+  # For details regarding fonts from package dependencies,
+  # see https://flutter.dev/custom-fonts/#from-packages
