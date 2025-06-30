@@ -19,6 +19,7 @@ class AppRoutes {
   static const String splash = '/'; // Initial route
   static const String login = '/login';
   static const String home = '/home'; // Represents the main screen after login, e.g., pet profiles
+  static const String signUp = '/signUp'; // Route for the sign-up screen
   // Add other route names here e.g.
   // static const String petDetails = '/pet/:id'; // Example with path parameter
 }
