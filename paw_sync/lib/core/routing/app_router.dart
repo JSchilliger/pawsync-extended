@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:paw_sync/core/auth/providers/auth_providers.dart'; // Import auth providers
 import 'package:paw_sync/core/auth/screens/login_screen.dart';
+import 'package:paw_sync/core/auth/screens/sign_up_screen.dart'; // Import SignUpScreen
 import 'package:paw_sync/core/auth/screens/splash_screen.dart';
 import 'package:paw_sync/features/pet_profile/screens/pet_profile_screen.dart';
 // TODO: Import other screens as they are created.
@@ -93,6 +94,7 @@ class AppRouter {
         final String currentLocation = state.matchedLocation;
         final bool isSplashScreen = currentLocation == AppRoutes.splash;
         final bool isLoggingIn = currentLocation == AppRoutes.login;
+        final bool isSigningUp = currentLocation == AppRoutes.signUp; // Check if on sign-up route
 
         print('Router Redirect: isLoggedIn: $isLoggedIn, currentLocation: $currentLocation');
 
@@ -101,14 +103,14 @@ class AppRouter {
           return null;
         }
 
-        // If not logged in and not trying to log in, redirect to login
-        if (!isLoggedIn && !isLoggingIn) {
+        // If not logged in, not trying to log in, and not trying to sign up, redirect to login
+        if (!isLoggedIn && !isLoggingIn && !isSigningUp) {
           print('Redirecting to ${AppRoutes.login}');
           return AppRoutes.login;
         }
 
-        // If logged in and on the login page, redirect to home
-        if (isLoggedIn && isLoggingIn) {
+        // If logged in and on the login or sign up page, redirect to home
+        if (isLoggedIn && (isLoggingIn || isSigningUp)) {
           print('Redirecting to ${AppRoutes.home}');
           return AppRoutes.home;
         }
@@ -141,6 +143,15 @@ class AppRouter {
           name: AppRoutes.login, // Using actual route name
           builder: (BuildContext context, GoRouterState state) {
             return const LoginScreen();
+          },
+        ),
+
+        // Sign Up Screen Route
+        GoRoute(
+          path: AppRoutes.signUp,
+          name: AppRoutes.signUp, // Using actual route name
+          builder: (BuildContext context, GoRouterState state) {
+            return const SignUpScreen(); // Use the new SignUpScreen
           },
         ),
       ],
