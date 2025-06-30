@@ -166,3 +166,39 @@ A consistent approach to error handling improves user experience and maintainabi
     *   Unexpected server errors.
 
 This strategy aims to provide informative and non-disruptive feedback to the user, helping them understand what went wrong and what to do next, while also aiding developers in diagnosing issues.
+
+## 6. UI Style and Theming Decisions (Conceptual)
+
+This section summarizes the initial design direction for colors, typography, and custom themed widgets.
+
+*   **Color Palette Direction:**
+    *   The application aims for a **pastel and less "pop"** base color scheme for a calming and sophisticated UI, suitable for long-term use.
+    *   Brighter, more vibrant "pop" colors are reserved for specific highlights, calls to action (CTAs), or important alerts.
+    *   **Key Colors Defined (see `lib/core/theme/theme.dart` - `AppColors` class):**
+        *   `primary`: Muted Blue/Lavender (e.g., Indigo 300: `0xFF7986CB`)
+        *   `secondary`: Softer Teal (e.g., Teal 300: `0xFF4DB6AC`)
+        *   `background`: Very light grey/off-white (e.g., Grey 50: `0xFFFAFAFA`)
+        *   `surface`: White (e.g., `0xFFFFFFFF`), for cards to stand out.
+        *   `surfaceVariant`: Slightly off-white/very light grey (e.g., `0xFFF0F0F0`) for subtle distinctions.
+        *   Semantic colors (`success`, `warning`, `info`, `error`) are defined with softer, pastel-aligned shades.
+        *   A dedicated `highlight` color (e.g., Vibrant Cyan: `0xFF00ACC1`) is available for elements that need to stand out.
+        *   Neutral text and divider colors aim for good readability and soft contrast.
+    *   The full `ColorScheme` in `theme.dart` is configured based on these `AppColors`.
+
+*   **Typography:**
+    *   **Font Families (Placeholders):**
+        *   Default: 'Roboto'
+        *   Headings: 'RobotoSlab'
+        *   *(These are placeholders; actual font files need to be added to assets and `pubspec.yaml` if custom fonts are chosen).*
+    *   **Type Scale:** The `TextTheme` in `theme.dart` maps styles from `AppTextStyles` to the Material Design type scale (e.g., `displayLarge`, `titleMedium`, `bodyMedium`, `labelLarge`). This includes specific definitions for `titleLarge`, `titleMedium`, and `titleSmall` which are commonly used in app UIs.
+
+*   **Custom Themed Widgets (Static Drafts):**
+    *   To promote consistency and reuse, initial drafts of some themed widgets have been created:
+        *   **Buttons:** `PrimaryActionButton`, `SecondaryActionButton`, `DestructiveActionButton` defined in `lib/core/widgets/themed_buttons.dart`. These use the app's theme for styling and support icons and loading states.
+        *   **Cards:** `StyledCard` defined in `lib/core/widgets/styled_card.dart`. This wraps the standard `Card` widget, applies theme defaults, standardizes internal padding, and supports an optional `onTap` callback.
+
+*   **Iconography:**
+    *   Currently using standard Material Icons (e.g., `Icons.pets`, `Icons.add`).
+    *   Future consideration: Decide if a custom icon set or a different style (e.g., more outlined icons) is preferred. This will impact asset choices.
+
+Refer to `lib/core/theme/theme.dart` for the concrete implementation of colors and text styles. The custom widget files provide examples of how these theme elements are applied.
