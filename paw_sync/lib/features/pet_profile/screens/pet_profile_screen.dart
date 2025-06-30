@@ -66,8 +66,9 @@ class PetProfileScreen extends ConsumerWidget {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          // TODO: Navigate to add pet screen
-          print('Add new pet FAB pressed');
+          // Navigate to add pet screen
+          GoRouter.of(context).push(AppRoutes.addPet);
+          print('Add new pet FAB pressed, navigating to ${AppRoutes.addPet}');
         },
         label: const Text('Add Pet'),
         icon: const Icon(Icons.add),
