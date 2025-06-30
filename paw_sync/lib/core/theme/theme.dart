@@ -297,13 +297,15 @@ ThemeData getAppThemeData(BuildContext context) {
     // The current implementation uses `CardTheme`, which is the standard Flutter API class name
     // for the `ThemeData.cardTheme` property. If issues persist after resolving import errors
     // and cleaning the build, this might indicate a specific nuance of the 3.3.25 environment.
-    cardTheme: CardTheme(
+    // Forcing to CardThemeData for compatibility with user's Flutter 3.3.x.
+    cardTheme: CardThemeData(
       elevation: 2.0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12.0),
       ),
       margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
       color: AppColors.surface,
+      // clipBehavior: Clip.antiAlias, // CardThemeData might not have this, check 3.3.x API if error
     ),
 
     // Input decoration theme for TextFields
@@ -339,11 +341,13 @@ ThemeData getAppThemeData(BuildContext context) {
     // Note: User reported a type error on Flutter 3.3.x (DialogTheme vs DialogThemeData?).
     // The current implementation uses `DialogTheme`, which is the standard Flutter API class name
     // for the `ThemeData.dialogTheme` property.
-    dialogTheme: DialogTheme(
+    // Forcing to DialogThemeData for compatibility with user's Flutter 3.3.x.
+    dialogTheme: DialogThemeData(
       backgroundColor: AppColors.surface,
       titleTextStyle: AppTextStyles.titleLarge.copyWith(color: AppColors.textPrimary),
       contentTextStyle: AppTextStyles.bodyM.copyWith(color: AppColors.textSecondary),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+      // elevation: 24.0, // DialogThemeData might have different/more params, check 3.3.x API
     ),
 
     // Example: Chip Theme
