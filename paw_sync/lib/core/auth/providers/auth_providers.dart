@@ -3,6 +3,7 @@
 
 import 'package:firebase_auth/firebase_auth.dart' as fb_auth; // Aliased for clarity
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_sign_in/google_sign_in.dart'; // Import GoogleSignIn
 import 'package:paw_sync/core/auth/models/user_model.dart';
 import 'package:paw_sync/core/auth/repositories/auth_repository.dart';
 import 'package:paw_sync/core/auth/repositories/firebase_auth_repository.dart'; // Import concrete implementation
@@ -16,13 +17,17 @@ final firebaseAuthProvider = Provider<fb_auth.FirebaseAuth>((ref) {
 });
 
 // Provider for the AuthRepository implementation.
-// Now returns an instance of FirebaseAuthRepository.
+// Now returns an instance of FirebaseAuthRepository, injecting GoogleSignIn.
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   final firebaseAuthInstance = ref.watch(firebaseAuthProvider);
-  // If GoogleSignIn was fully implemented, it would be passed here too:
-  // final googleSignInInstance = ref.watch(googleSignInProvider); // Assuming a googleSignInProvider
-  // return FirebaseAuthRepository(firebaseAuthInstance, googleSignInInstance);
-  return FirebaseAuthRepository(firebaseAuthInstance);
+  final googleSignInInstance = ref.watch(googleSignInProvider); // Watch the new provider
+  return FirebaseAuthRepository(firebaseAuthInstance, googleSignInInstance); // Pass GoogleSignIn
+});
+
+// Provider for the GoogleSignIn instance.
+// Scopes like 'email' and 'profile' are common for basic info.
+final googleSignInProvider = Provider<GoogleSignIn>((ref) {
+  return GoogleSignIn(scopes: ['email', 'profile']);
 });
 
 // Provider for the stream of authentication state changes from the repository.
@@ -84,11 +89,12 @@ final emailPasswordSignUpProvider = Provider((ref) {
   };
 });
 
-// Provider for signing in with Google.
-final googleSignInProvider = Provider((ref) {
+// Provider for signing in with Google (this provider itself is not strictly needed anymore
+// if AuthNotifier calls the repository method directly, but kept for consistency or direct use if desired).
+// However, the primary way to trigger this will be via authNotifierProvider.notifier.signInWithGoogle().
+final googleSignInActionProvider = Provider((ref) { // Renamed to avoid conflict and clarify purpose
   final authRepository = ref.watch(authRepositoryProvider);
   return () async {
-    // Note: This will currently throw UnimplementedError from FirebaseAuthRepository
     return await authRepository.signInWithGoogle();
   };
 });
