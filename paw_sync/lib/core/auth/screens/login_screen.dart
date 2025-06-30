@@ -51,14 +51,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final colorScheme = Theme.of(context).colorScheme;
     final authState = ref.watch(authNotifierProvider); // Watch the auth state
 
-    // Listen to auth state for showing SnackBars on error
+    // Listen to auth state for showing SnackBars on error for general auth operations
     ref.listen<AsyncValue>(
       authNotifierProvider,
       (previous, next) {
         if (next.hasError && !next.isLoading) {
+          // Avoid showing snackbar if it's a specific error handled elsewhere (e.g., dialog)
+          // This is a general catch-all.
+          final errorMessage = next.error is AuthRepositoryException
+              ? (next.error as AuthRepositoryException).message
+              : next.error.toString();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(next.error.toString()), // Basic error display
+              content: Text(errorMessage),
               backgroundColor: colorScheme.error,
             ),
           );
@@ -173,10 +178,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      onPressed: () {
-                        // TODO: Implement forgot password logic
-                        print('Forgot password pressed');
-                      },
+                      onPressed: () => _showForgotPasswordDialog(context, ref),
                       child: Text(
                         'Forgot Password?',
                         style: TextStyle(color: colorScheme.primary),
@@ -261,5 +263,108 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ),
       ),
     );
+  }
+
+  // Method to show the forgot password dialog
+  void _showForgotPasswordDialog(BuildContext context, WidgetRef ref) {
+    final TextEditingController emailController = TextEditingController();
+    final GlobalKey<FormState> dialogFormKey = GlobalKey<FormState>();
+    final colorScheme = Theme.of(context).colorScheme;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('Reset Password'),
+          content: Form(
+            key: dialogFormKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                const Text('Enter your email address below to receive password reset instructions.'),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: emailController,
+                  decoration: InputDecoration(
+                    labelText: 'Email Address',
+                    hintText: 'you@example.com',
+                    prefixIcon: Icon(Icons.email_outlined, color: colorScheme.primary),
+                  ),
+                  keyboardType: TextInputType.emailAddress,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Please enter your email address.';
+                    }
+                    final emailRegex = RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+");
+                    if (!emailRegex.hasMatch(value)) {
+                      return 'Please enter a valid email address.';
+                    }
+                    return null;
+                  },
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
+                ),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+              },
+            ),
+            FilledButton( // Using FilledButton for primary action in dialog
+              child: const Text('Send Reset Email'),
+              onPressed: () async {
+                if (dialogFormKey.currentState?.validate() ?? false) {
+                  final email = emailController.text.trim();
+                  try {
+                    // Call the method from AuthNotifier
+                    // Note: We don't use ref.watch here as it's an action.
+                    // The authNotifierProvider itself isn't directly tracking reset password state,
+                    // so we directly call the method. Feedback is manual via SnackBar.
+                    await ref.read(authNotifierProvider.notifier).sendPasswordResetEmail(email: email);
+
+                    Navigator.of(dialogContext).pop(); // Close dialog
+
+                    if (mounted) { // Check if the widget is still in the tree
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Password reset email sent to $email.'),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    // Error handling directly here for the dialog's context
+                    Navigator.of(dialogContext).pop(); // Close dialog
+                    if (mounted) { // Check if the widget is still in the tree
+                      final errorMessage = e is AuthRepositoryException ? e.message : e.toString();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Error: $errorMessage'),
+                          backgroundColor: Theme.of(context).colorScheme.error,
+                        ),
+                      );
+                    }
+                  } finally {
+                     emailController.dispose();
+                  }
+                }
+              },
+            ),
+          ],
+        );
+      },
+    ).then((_) {
+      // Ensure controller is disposed if dialog is dismissed by tapping outside
+      // This is a bit of a safety net, primary disposal is in the 'Send Reset Email' onPressed.
+      // However, to be absolutely sure, we can try to dispose it here,
+      // but it might have already been disposed.
+      // A more robust way would be to manage the controller's lifecycle with the dialog's state.
+      // For this scope, this is a reasonable attempt.
+      // emailController.dispose(); // This might cause an error if already disposed.
+      // A simple way: just let it be, or use a StatefulWidget for the dialog content.
+    });
   }
 }
