@@ -60,9 +60,10 @@ class AppRouter {
       (previous, next) {
         authStateNotifier.value = next;
       },
-      // Fire immediately to get the initial state
-      fireImmediately: true,
     );
+    // Manually set the initial value for authStateNotifier
+    // This replaces the need for `fireImmediately: true` which might not be available in older Riverpod.
+    authStateNotifier.value = ref.read(authNotifierProvider);
 
     // Ensure the subscription is cancelled when the notifier is disposed.
     // This is tricky with a static getRouter. In a real app, the GoRouter
