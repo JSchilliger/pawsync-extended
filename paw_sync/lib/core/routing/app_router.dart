@@ -2,14 +2,15 @@
 // This file defines the application's routes using the go_router package.
 // It centralizes all navigation logic.
 
+import 'dart:async'; // For StreamSubscription
+
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart'; // Required for using Riverpod with GoRouter redirect
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-// import 'package:paw_sync/core/auth/providers/auth_providers.dart'; // Import auth providers
+import 'package:paw_sync/core/auth/providers/auth_providers.dart'; // Import auth providers
 import 'package:paw_sync/core/auth/screens/login_screen.dart';
 import 'package:paw_sync/core/auth/screens/splash_screen.dart';
-import 'package:paw_sync/features/pet_profile/screens/pet_profile_screen.dart'; // Placeholder Home
-
+import 'package:paw_sync/features/pet_profile/screens/pet_profile_screen.dart';
 // TODO: Import other screens as they are created.
 
 // Application route paths.
@@ -42,37 +43,76 @@ class AppRouter {
   /// Private constructor to prevent instantiation.
   AppRouter._();
 
-  // GoRouter configuration
   static GoRouter getRouter(WidgetRef ref) {
-    // final authState = ref.watch(authStateChangesProvider); // Commented out auth-dependent redirect
+    // ValueNotifier to trigger GoRouter refresh when auth state changes.
+    final authStateNotifier = ValueNotifier<AsyncValue<dynamic>>(const AsyncValue.loading());
+
+    // Listen to the authNotifierProvider and update the ValueNotifier.
+    // It's important to manage the subscription to avoid memory leaks.
+    // This is often done in a StatefulWidget that owns the GoRouter,
+    // but for a static getRouter, we might need a more careful approach
+    // or accept that this subscription lives for the app's lifetime if not managed.
+    // For simplicity here, we'll assume it's managed or short-lived for setup.
+    // A more robust solution might involve a dedicated Riverpod provider for the router itself.
+    final StreamSubscription<AsyncValue<dynamic>>? subscription = ref.listen<AsyncValue<dynamic>>(
+      authNotifierProvider,
+      (previous, next) {
+        authStateNotifier.value = next;
+      },
+      // Fire immediately to get the initial state
+      fireImmediately: true,
+    );
+
+    // Ensure the subscription is cancelled when the notifier is disposed.
+    // This is tricky with a static getRouter. In a real app, the GoRouter
+    // instance and this listener would typically be managed by a provider or StatefulWidget.
+    // For now, this is a simplified setup. The ValueNotifier itself doesn't
+    // strictly need disposal if it's only used by the refreshListenable here
+    // and GoRouter handles its own lifecycle with the listenable.
+    // authStateNotifier.addListener(() {
+    //   if (authStateNotifier.disposed) { // Hypothetical check, ValueNotifier doesn't have `disposed`
+    //     subscription?.cancel();
+    //   }
+    // });
+    // A better way for cleanup might be to make GoRouter itself a provider that handles this.
+    // ref.onDispose(() => subscription?.cancel()); // This would work if getRouter was part of a provider
+
 
     return GoRouter(
       initialLocation: AppRoutes.splash,
-      debugLogDiagnostics: true, // Log diagnostic info for GoRouter. Disable in production.
+      debugLogDiagnostics: true,
+      refreshListenable: authStateNotifier, // Re-evaluate routes on auth change
+      redirect: (BuildContext context, GoRouterState state) {
+        final authState = ref.read(authNotifierProvider); // Read current auth state
+        final user = authState.value; // Actual user object or null
+        final bool isLoggedIn = user != null;
 
-      // redirect: (BuildContext context, GoRouterState state) { // Commented out auth-dependent redirect
-      //   final bool loggedIn = authState.asData?.value != null;
-      //   final String currentLocation = state.matchedLocation;
+        final String currentLocation = state.matchedLocation;
+        final bool isSplashScreen = currentLocation == AppRoutes.splash;
+        final bool isLoggingIn = currentLocation == AppRoutes.login;
 
-      //   print("Redirect check: LoggedIn: $loggedIn, CurrentLocation: $currentLocation");
+        print('Router Redirect: isLoggedIn: $isLoggedIn, currentLocation: $currentLocation');
 
-      //   if (currentLocation == AppRoutes.splash) {
-      //     return null;
-      //   }
+        // If on splash, let it do its thing (e.g., timed navigation)
+        if (isSplashScreen) {
+          return null;
+        }
 
-      //   if (!loggedIn && currentLocation != AppRoutes.login) {
-      //     print("Redirecting to login");
-      //     return AppRoutes.login;
-      //   }
+        // If not logged in and not trying to log in, redirect to login
+        if (!isLoggedIn && !isLoggingIn) {
+          print('Redirecting to ${AppRoutes.login}');
+          return AppRoutes.login;
+        }
 
-      //   if (loggedIn && currentLocation == AppRoutes.login) {
-      //     print("Redirecting to home");
-      //     return AppRoutes.home;
-      //   }
-      //   print("No redirect needed for location: $currentLocation");
-      //   return null;
-      // },
+        // If logged in and on the login page, redirect to home
+        if (isLoggedIn && isLoggingIn) {
+          print('Redirecting to ${AppRoutes.home}');
+          return AppRoutes.home;
+        }
 
+        // No redirect needed
+        return null;
+      },
       routes: <RouteBase>[
         // Splash Screen Route
         GoRoute(
