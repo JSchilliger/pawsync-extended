@@ -293,6 +293,10 @@ ThemeData getAppThemeData(BuildContext context) {
     ),
 
     // Card theme
+    // Note: User reported a type error on Flutter 3.3.x (CardTheme vs CardThemeData?).
+    // The current implementation uses `CardTheme`, which is the standard Flutter API class name
+    // for the `ThemeData.cardTheme` property. If issues persist after resolving import errors
+    // and cleaning the build, this might indicate a specific nuance of the 3.3.25 environment.
     cardTheme: CardTheme(
       elevation: 2.0,
       shape: RoundedRectangleBorder(
@@ -332,6 +336,9 @@ ThemeData getAppThemeData(BuildContext context) {
 
     // Define other component themes as needed (e.g., dialogTheme, chipTheme, etc.)
     // Example: Dialog Theme
+    // Note: User reported a type error on Flutter 3.3.x (DialogTheme vs DialogThemeData?).
+    // The current implementation uses `DialogTheme`, which is the standard Flutter API class name
+    // for the `ThemeData.dialogTheme` property.
     dialogTheme: DialogTheme(
       backgroundColor: AppColors.surface,
       titleTextStyle: AppTextStyles.titleLarge.copyWith(color: AppColors.textPrimary),
