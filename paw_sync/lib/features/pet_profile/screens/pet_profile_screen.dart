@@ -3,42 +3,23 @@
 // For now, it serves as a placeholder "home" screen after login.
 
 import 'package:flutter/material.dart';
-// import 'package:paw_sync/features/pet_profile/models/pet_model.dart'; // For Pet type, if used directly
+import 'package:flutter_riverpod/flutter_riverpod.dart'; // Import Riverpod
+import 'package:paw_sync/core/auth/providers/auth_providers.dart'; // Import auth providers
+import 'package:paw_sync/features/pet_profile/models/pet_model.dart'; // Import Pet model
+import 'package:paw_sync/features/pet_profile/providers/pet_providers.dart'; // Import pet providers
 
-class PetProfileScreen extends StatelessWidget {
+class PetProfileScreen extends ConsumerWidget {
   const PetProfileScreen({super.key});
 
-  // Placeholder data for pet cards - in a real app, this would come from a provider
-  final List<Map<String, String>> _placeholderPets = const [
-    {
-      'name': 'Buddy',
-      'species': 'Dog',
-      'breed': 'Golden Retriever',
-      'photoPlaceholder': 'assets/images/dog_placeholder.png', // Needs asset
-    },
-    {
-      'name': 'Whiskers',
-      'species': 'Cat',
-      'breed': 'Siamese',
-      'photoPlaceholder': 'assets/images/cat_placeholder.png', // Needs asset
-    },
-    {
-      'name': 'Rocky',
-      'species': 'Dog',
-      'breed': 'German Shepherd',
-      'photoPlaceholder': 'assets/images/dog_placeholder_2.png', // Needs asset
-    },
-  ];
-
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final textTheme = Theme.of(context).textTheme;
     final colorScheme = Theme.of(context).colorScheme;
-    final bool hasPets = _placeholderPets.isNotEmpty; // Simulate having pets or not
+    final petsAsyncValue = ref.watch(currentUserPetsStreamProvider); // Watch the stream provider
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Pets'), // Changed title
+        title: const Text('My Pets'),
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications_none_outlined),
@@ -51,16 +32,38 @@ class PetProfileScreen extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.logout_outlined),
             tooltip: 'Logout',
-            onPressed: () {
-              // TODO: Implement logout logic and navigate to LoginScreen
-              print('Logout button pressed');
-              // Example: ref.read(signOutProvider)(); // Using a provider
-              // context.go(AppRoutes.login); // Using GoRouter
+            onPressed: () async {
+              await ref.read(authNotifierProvider.notifier).signOut();
+              print('Logout button pressed and signout attempted');
             },
           ),
         ],
       ),
-      body: hasPets ? _buildPetList(context, textTheme, colorScheme) : _buildEmptyState(context, textTheme, colorScheme),
+      body: petsAsyncValue.when(
+        data: (pets) {
+          if (pets.isEmpty) {
+            return _buildEmptyState(context, textTheme, colorScheme);
+          }
+          return _buildPetList(context, textTheme, colorScheme, pets);
+        },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stackTrace) {
+          print('Error loading pets: $error');
+          print(stackTrace);
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, color: Colors.red, size: 60),
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text('Error loading your pets: $error', textAlign: TextAlign.center),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           // TODO: Navigate to add pet screen
@@ -68,43 +71,48 @@ class PetProfileScreen extends StatelessWidget {
         },
         label: const Text('Add Pet'),
         icon: const Icon(Icons.add),
-        // backgroundColor: colorScheme.secondary, // Or primary
-        // foregroundColor: colorScheme.onSecondary, // Or onPrimary
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 
-  Widget _buildPetList(BuildContext context, TextTheme textTheme, ColorScheme colorScheme) {
+  Widget _buildPetList(BuildContext context, TextTheme textTheme, ColorScheme colorScheme, List<Pet> pets) {
     return ListView.builder(
       padding: const EdgeInsets.all(16.0),
-      itemCount: _placeholderPets.length,
+      itemCount: pets.length,
       itemBuilder: (context, index) {
-        final pet = _placeholderPets[index];
+        final pet = pets[index];
         return Card(
-          // elevation: Theme.of(context).cardTheme.elevation ?? 4.0, // From theme
-          // shape: Theme.of(context).cardTheme.shape, // From theme
-          // margin: Theme.of(context).cardTheme.margin, // From theme
-          clipBehavior: Clip.antiAlias, // Ensures content respects card shape
+          clipBehavior: Clip.antiAlias,
           child: InkWell(
             onTap: () {
               // TODO: Navigate to pet detail screen
-              print('Tapped on pet: ${pet['name']}');
+              print('Tapped on pet: ${pet.name}');
             },
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Placeholder for Pet Image
+                // TODO: Replace with actual image loading (Image.network(pet.photoUrl!)) if photoUrl is available
                 Container(
                   height: 180,
                   color: Colors.grey[300], // Placeholder color
-                  // child: Image.asset(
-                  //   pet['photoPlaceholder']!,
-                  //   fit: BoxFit.cover,
-                  //   errorBuilder: (context, error, stackTrace) => Center(child: Icon(Icons.pets, size: 50, color: Colors.grey[600])),
-                  // ),
-                  // If assets are not available, use an icon:
-                  child: Center(child: Icon(Icons.pets, size: 80, color: Colors.grey[700])),
+                  child: pet.photoUrl != null && pet.photoUrl!.isNotEmpty
+                      ? Image.network(
+                          pet.photoUrl!,
+                          fit: BoxFit.cover,
+                          loadingBuilder: (BuildContext context, Widget child, ImageChunkEvent? loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Center(
+                              child: CircularProgressIndicator(
+                                value: loadingProgress.expectedTotalBytes != null
+                                    ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                                    : null,
+                              ),
+                            );
+                          },
+                          errorBuilder: (context, error, stackTrace) => Center(child: Icon(Icons.pets, size: 80, color: Colors.grey[700])),
+                        )
+                      : Center(child: Icon(Icons.pets, size: 80, color: Colors.grey[700])),
                 ),
                 Padding(
                   padding: const EdgeInsets.all(16.0),
@@ -112,18 +120,17 @@ class PetProfileScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        pet['name']!,
+                        pet.name,
                         style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${pet['species']} - ${pet['breed']}',
+                        '${pet.species} - ${pet.breed ?? 'N/A'}', // Handle null breed
                         style: textTheme.bodyMedium?.copyWith(color: Colors.grey[700]),
                       ),
                     ],
                   ),
                 ),
-                // Example actions on a pet card
                 Padding(
                   padding: const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 16.0),
                   child: Row(
@@ -131,14 +138,11 @@ class PetProfileScreen extends StatelessWidget {
                     children: [
                       TextButton(
                         onPressed: () {
-                          print('View details for ${pet['name']}');
+                          // TODO: Navigate to pet detail screen (same as onTap for card)
+                          print('View details for ${pet.name}');
                         },
                         child: const Text('View Details'),
                       ),
-                      // IconButton(
-                      //   icon: Icon(Icons.edit_outlined, color: colorScheme.primary),
-                      //   onPressed: () { print('Edit ${pet['name']}'); },
-                      // ),
                     ],
                   ),
                 )
