@@ -3,10 +3,12 @@
 // For now, it serves as a placeholder "home" screen after login.
 
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart'; // Import Riverpod
-import 'package:paw_sync/core/auth/providers/auth_providers.dart'; // Import auth providers
-import 'package:paw_sync/features/pet_profile/models/pet_model.dart'; // Import Pet model
-import 'package:paw_sync/features/pet_profile/providers/pet_providers.dart'; // Import pet providers
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart'; // Import GoRouter
+import 'package:paw_sync/core/auth/providers/auth_providers.dart';
+import 'package:paw_sync/core/routing/app_router.dart'; // Import AppRoutes
+import 'package:paw_sync/features/pet_profile/models/pet_model.dart';
+import 'package:paw_sync/features/pet_profile/providers/pet_providers.dart';
 
 class PetProfileScreen extends ConsumerWidget {
   const PetProfileScreen({super.key});
@@ -87,8 +89,9 @@ class PetProfileScreen extends ConsumerWidget {
           clipBehavior: Clip.antiAlias,
           child: InkWell(
             onTap: () {
-              // TODO: Navigate to pet detail screen
-              print('Tapped on pet: ${pet.name}');
+              // Navigate to pet detail screen
+              GoRouter.of(context).pushNamed(AppRoutes.petDetail, pathParameters: {'petId': pet.id});
+              print('Tapped on pet: ${pet.name}, navigating to details with ID: ${pet.id}');
             },
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -139,8 +142,9 @@ class PetProfileScreen extends ConsumerWidget {
                     children: [
                       TextButton(
                         onPressed: () {
-                          // TODO: Navigate to pet detail screen (same as onTap for card)
-                          print('View details for ${pet.name}');
+                          // Navigate to pet detail screen (same as onTap for card)
+                           GoRouter.of(context).pushNamed(AppRoutes.petDetail, pathParameters: {'petId': pet.id});
+                           print('View details for ${pet.name}, navigating with ID: ${pet.id}');
                         },
                         child: const Text('View Details'),
                       ),

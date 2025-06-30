@@ -12,6 +12,7 @@ import 'package:paw_sync/core/auth/screens/login_screen.dart';
 import 'package:paw_sync/core/auth/screens/sign_up_screen.dart'; // Import SignUpScreen
 import 'package:paw_sync/core/auth/screens/splash_screen.dart';
 import 'package:paw_sync/features/pet_profile/screens/add_pet_screen.dart'; // Import AddPetScreen
+import 'package:paw_sync/features/pet_profile/screens/pet_detail_screen.dart'; // Import PetDetailScreen
 import 'package:paw_sync/features/pet_profile/screens/pet_profile_screen.dart';
 // TODO: Import other screens as they are created.
 
@@ -23,8 +24,8 @@ class AppRoutes {
   static const String home = '/home'; // Represents the main screen after login, e.g., pet profiles
   static const String signUp = '/signUp'; // Route for the sign-up screen
   static const String addPet = '/add-pet'; // Route for adding a new pet
+  static const String petDetail = '/pet/:petId'; // Route for viewing pet details
   // Add other route names here e.g.
-  // static const String petDetails = '/pet/:id'; // Example with path parameter
 }
 
 // PlaceholderScreen is no longer needed here as we are using actual screen files.
@@ -168,6 +169,25 @@ class AppRouter {
           // The main redirect logic already handles redirecting to login if not authenticated.
           // If specific parent-child navigation is needed (e.g. /home/add-pet),
           // this could be a sub-route of AppRoutes.home. For now, a top-level route is fine.
+        ),
+
+        // Pet Detail Screen Route
+        GoRoute(
+          path: AppRoutes.petDetail, // e.g., /pet/123
+          name: AppRoutes.petDetail,
+          builder: (BuildContext context, GoRouterState state) {
+            final petId = state.pathParameters['petId'];
+            if (petId == null) {
+              // This case should ideally not happen if path is matched correctly
+              // and parameter is always present.
+              // You could redirect to an error page or home.
+              print('Error: petId is null for petDetail route');
+              return const Scaffold(body: Center(child: Text('Error: Pet ID missing')));
+            }
+            return PetDetailScreen(petId: petId);
+          },
+          // This route should only be accessible if logged in.
+          // The main redirect logic already handles this.
         ),
       ],
 
