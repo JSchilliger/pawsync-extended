@@ -1,15 +1,14 @@
 // lib/core/auth/repositories/firebase_auth_repository.dart
 
-import 'package:firebase_auth/firebase_auth.dart' as fb_auth; // aliased to avoid conflict with User model if any
+import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
+import 'package:google_sign_in/google_sign_in.dart'; // Import GoogleSignIn
 import 'package:paw_sync/core/auth/repositories/auth_repository.dart';
-// Import for google_sign_in would go here if we were fully implementing it
-// import 'package:google_sign_in/google_sign_in.dart';
 
 class FirebaseAuthRepository implements AuthRepository {
   final fb_auth.FirebaseAuth _firebaseAuth;
-  // final GoogleSignIn _googleSignIn; // Would be needed for Google Sign-In
+  final GoogleSignIn _googleSignIn; // Add GoogleSignIn instance
 
-  FirebaseAuthRepository(this._firebaseAuth /*, this._googleSignIn */);
+  FirebaseAuthRepository(this._firebaseAuth, this._googleSignIn); // Update constructor
 
   @override
   Stream<fb_auth.User?> get authStateChanges => _firebaseAuth.authStateChanges();
@@ -62,39 +61,42 @@ class FirebaseAuthRepository implements AuthRepository {
 
   @override
   Future<fb_auth.User?> signInWithGoogle() async {
-    // This requires the `google_sign_in` package and platform-specific setup.
-    // For now, this is a placeholder implementation.
-    print('FirebaseAuthRepository: signInWithGoogle() called - Placeholder implementation.');
-    throw UnimplementedError(
-        'Google Sign-In is not implemented yet. Requires google_sign_in package and setup.');
-    // Example structure of a real implementation:
-    // try {
-    //   final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-    //   if (googleUser == null) {
-    //     // User cancelled the sign-in
-    //     return null;
-    //   }
-    //   final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-    //   final fb_auth.AuthCredential credential = fb_auth.GoogleAuthProvider.credential(
-    //     accessToken: googleAuth.accessToken,
-    //     idToken: googleAuth.idToken,
-    //   );
-    //   final userCredential = await _firebaseAuth.signInWithCredential(credential);
-    //   return userCredential.user;
-    // } on fb_auth.FirebaseAuthException catch (e) {
-    //   throw AuthRepositoryException(e.message ?? 'Google Sign-In failed.', code: e.code, underlyingException: e);
-    // } catch (e) {
-    //   throw AuthRepositoryException('An unexpected error occurred during Google Sign-In.', underlyingException: e);
-    // }
+    try {
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) {
+        // User cancelled the sign-in process
+        print('Google Sign-In cancelled by user.');
+        return null;
+      }
+
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final fb_auth.AuthCredential credential = fb_auth.GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      final userCredential = await _firebaseAuth.signInWithCredential(credential);
+      return userCredential.user;
+    } on fb_auth.FirebaseAuthException catch (e) {
+      // Handle specific Firebase exceptions related to credential sign-in
+      print('FirebaseAuthException during Google Sign-In: ${e.code} - ${e.message}');
+      throw AuthRepositoryException(e.message ?? 'Google Sign-In with Firebase failed.', code: e.code, underlyingException: e);
+    } catch (e, stackTrace) {
+      // Handle other errors, including potential issues with _googleSignIn.signIn() itself
+      // (e.g., network errors, platform specific issues if not configured correctly)
+      print('Unexpected error during Google Sign-In: $e\n$stackTrace');
+      throw AuthRepositoryException('An unexpected error occurred during Google Sign-In.', underlyingException: e);
+    }
   }
 
   @override
   Future<void> signOut() async {
     try {
-      // await _googleSignIn.signOut(); // Also sign out from Google if implemented
-      await _firebaseAuth.signOut();
+      // It's good practice to sign out from both Firebase and GoogleSignIn
+      await _googleSignIn.signOut(); // Sign out from Google
+      await _firebaseAuth.signOut(); // Sign out from Firebase
     } on fb_auth.FirebaseAuthException catch (e) {
-      throw AuthRepositoryException(e.message ?? 'Sign out failed.', code: e.code, underlyingException: e);
+      throw AuthRepositoryException(e.message ?? 'Firebase sign out failed.', code: e.code, underlyingException: e);
     } catch (e) {
       throw AuthRepositoryException('An unexpected error occurred during sign-out.', underlyingException: e);
     }
