@@ -77,7 +77,8 @@ class AuthNotifier extends AsyncNotifier<fb_auth.User?> {
       await ref.read(authRepositoryProvider).signInWithGoogle();
       // authStateChangesProvider should reflect the new user on successful Google Sign-In.
     } catch (e, s) {
-      // This will catch the UnimplementedError from the repository for now.
+      // If signInWithGoogle fails (e.g., user cancels, network issue, Firebase config error),
+      // it will throw an exception caught here.
       state = AsyncError(e, s);
     }
   }
