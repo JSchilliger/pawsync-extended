@@ -55,7 +55,8 @@ class AppRouter {
     // or accept that this subscription lives for the app's lifetime if not managed.
     // For simplicity here, we'll assume it's managed or short-lived for setup.
     // A more robust solution might involve a dedicated Riverpod provider for the router itself.
-    final StreamSubscription<AsyncValue<dynamic>>? subscription = ref.listen<AsyncValue<dynamic>>(
+    // The StreamSubscription is not stored as its lifecycle isn't easily managed in this static context.
+    ref.listen<AsyncValue<dynamic>>(
       authNotifierProvider,
       (previous, next) {
         authStateNotifier.value = next;
