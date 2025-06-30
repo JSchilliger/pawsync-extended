@@ -41,3 +41,14 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Secrets Firebase
+/android/app/google-services.json
+/ios/Runner/GoogleService-Info.plist
+/macos/Runner/GoogleService-Info.plist
+
+# Fichiers système macOS
+.DS_Store
+
+# Fichiers de traduction générés
+/lib/core/localization/l10n/

@@ -42,7 +42,7 @@ dependencies:
 
   # Internationalization: intl package provides tools for internationalization and localization.
   # Used by flutter_localizations and for custom date/number formatting.
-  intl: ^0.19.0 # Version needs to be compatible with flutter_localizations
+  intl: ^0.20.2 # Version needs to be compatible with flutter_localizations
 
   # Linting: flutter_lints provides a recommended set of linting rules to encourage good coding practices.
   flutter_lints: ^4.0.0
