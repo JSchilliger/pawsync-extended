@@ -62,10 +62,10 @@ final currentUserModelProvider = Provider<UserModel?>((ref) {
 });
 
 
-// TODO: Implement an AsyncNotifier or StateNotifier for authentication actions
-// for more robust state management (loading, error handling).
-// The providers below are simplified for API definition.
-// This notifier will handle methods like:
+// The AuthNotifier (see auth_notifier.dart and authNotifierProvider below)
+// now serves the purpose of robust state management for authentication actions.
+// The providers below this comment are simplified for direct API definition or specific use cases
+// but primary UI interaction for auth operations should go through authNotifierProvider.
 // --- Mutation Providers (simplified for API definition) ---
 
 // Provider for signing in with email and password.
