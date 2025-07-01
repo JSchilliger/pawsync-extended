@@ -79,14 +79,16 @@ dev_dependencies:
   flutter_test: # Provides testing utilities for Flutter widgets.
     sdk: flutter # Sourced from the Flutter SDK.
 
+  build_runner: ^2.4.9 # For generating mock files, freezed models, etc.
+  mockito: ^5.4.4 # For creating mock objects in tests.
+
   # --- TODO: Potential Future Dev Dependencies ---
   # TODO (State/Models): Add build_runner and freezed if using freezed.
-  # build_runner: ^latest_version
   # freezed: ^latest_version
   # json_serializable: ^latest_version # If using freezed with json_serializable
 
   # TODO (Testing): Add mockito or mocktail for generating mocks for testing repositories/services.
-  # mockito: ^latest_version # or mocktail: ^latest_version
+  # Integration_test sdk: flutter # For integration testing
 
 # Flutter-specific configuration section.
 flutter:
