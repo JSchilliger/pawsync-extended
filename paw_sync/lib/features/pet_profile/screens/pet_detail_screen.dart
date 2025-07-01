@@ -4,7 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart'; // For date formatting
 import 'package:paw_sync/features/pet_profile/models/pet_model.dart';
 import 'package:paw_sync/features/pet_profile/providers/pet_providers.dart';
-import 'package:paw_sync/features/pet_profile/widgets/save_vaccination_record_form.dart'; // Import the form
+import 'package:paw_sync/features/pet_profile/widgets/save_vaccination_record_form.dart';
+import 'package:paw_sync/features/pet_profile/widgets/save_medical_event_form.dart'; // Import the medical event form
 
 class PetDetailScreen extends ConsumerWidget {
   final String petId;
@@ -182,11 +183,26 @@ class PetDetailScreen extends ConsumerWidget {
                 Divider(),
 
                 // Medical History Section
-                _buildSectionTitle(context, 'Medical History'),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _buildSectionTitle(context, 'Medical History'),
+                    IconButton(
+                      icon: Icon(Icons.event_note_outlined, color: colorScheme.primary), // Different icon for variety
+                      tooltip: 'Add Medical Event',
+                      onPressed: () {
+                        _showSaveMedicalEventSheet(context, ref, pet);
+                      },
+                    ),
+                  ],
+                ),
                 if (pet.medicalHistory == null || pet.medicalHistory!.isEmpty)
-                  const Text('No medical history available.')
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: const Text('No medical history available.'),
+                  )
                 else
-                  ...pet.medicalHistory!.map((event) => _buildMedicalEventCard(context, event)).toList(),
+                  ...pet.medicalHistory!.map((event) => _buildMedicalEventCard(context, ref, pet, event)).toList(),
                 const SizedBox(height: 16),
                 Divider(),
 
@@ -327,20 +343,52 @@ class PetDetailScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildMedicalEventCard(BuildContext context, MedicalEvent event) {
-     return Card(
+  Widget _buildMedicalEventCard(BuildContext context, WidgetRef ref, Pet pet, MedicalEvent event) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Card(
       margin: const EdgeInsets.symmetric(vertical: 4.0),
       child: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('${event.type} - ${DateFormat.yMMMd().format(event.date)}', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    '${event.type} - ${DateFormat.yMMMd().format(event.date)}',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)
+                  ),
+                ),
+                Row(
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.edit_outlined, size: 20, color: colorScheme.onSurfaceVariant),
+                      tooltip: 'Edit Medical Event',
+                      onPressed: () {
+                        _showSaveMedicalEventSheet(context, ref, pet, existingEvent: event);
+                      },
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.delete_outline, size: 20, color: colorScheme.error),
+                      tooltip: 'Delete Medical Event',
+                      onPressed: () {
+                        _confirmDeleteMedicalEvent(context, ref, pet, event);
+                      },
+                    ),
+                  ],
+                )
+              ],
+            ),
             const SizedBox(height: 4),
             Text(event.description),
             if (event.veterinarianOrClinic != null && event.veterinarianOrClinic!.isNotEmpty)
-              Text('Clinic/Vet: ${event.veterinarianOrClinic}'),
-            // TODO: Display attachments if any
+              Padding(
+                padding: const EdgeInsets.only(top: 4.0),
+                child: Text('Clinic/Vet: ${event.veterinarianOrClinic}', style: Theme.of(context).textTheme.bodySmall),
+              ),
+            // TODO: Display attachments if any (e.g., event.attachmentUrls)
           ],
         ),
       ),
@@ -455,6 +503,104 @@ class PetDetailScreen extends ConsumerWidget {
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error deleting vaccination record: ${e.toString()}')),
+        );
+      }
+      // PetDetailScreen will rebuild due to petByIdProvider update.
+    }
+  }
+
+  void _showSaveMedicalEventSheet(
+    BuildContext context,
+    WidgetRef ref,
+    Pet pet,
+    {MedicalEvent? existingEvent}
+  ) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (BuildContext bottomSheetContext) {
+        return SaveMedicalEventForm(
+          pet: pet,
+          existingEvent: existingEvent,
+          onSave: (MedicalEvent savedEvent) async {
+            List<MedicalEvent> updatedEvents = List.from(pet.medicalHistory ?? []);
+
+            if (existingEvent != null) { // Edit mode
+              final index = updatedEvents.indexWhere((e) => e.id == existingEvent.id);
+              if (index != -1) {
+                updatedEvents[index] = savedEvent;
+              } else {
+                // Should not happen if editing an existing event, but as a fallback:
+                updatedEvents.add(savedEvent);
+              }
+            } else { // Add mode
+              updatedEvents.add(savedEvent);
+            }
+
+            // Sort events by date (descending) for consistent display
+            updatedEvents.sort((a, b) => b.date.compareTo(a.date));
+
+            final updatedPet = pet.copyWith(medicalHistory: updatedEvents);
+
+            try {
+              final updatePetAction = ref.read(updatePetProvider);
+              await updatePetAction(updatedPet);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Medical event ${existingEvent != null ? "updated" : "added"} successfully!')),
+              );
+            } catch (e) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Error saving medical event: ${e.toString()}')),
+              );
+            }
+            // PetDetailScreen will rebuild automatically.
+          },
+        );
+      },
+    );
+  }
+
+  void _confirmDeleteMedicalEvent(
+    BuildContext context,
+    WidgetRef ref,
+    Pet pet,
+    MedicalEvent eventToDelete,
+  ) async {
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('Confirm Deletion'),
+          content: Text('Are you sure you want to delete the medical event: "${eventToDelete.type} on ${DateFormat.yMMMd().format(eventToDelete.date)}?"'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+            ),
+            TextButton(
+              child: Text('Delete', style: TextStyle(color: Theme.of(context).colorScheme.error)),
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed == true) {
+      List<MedicalEvent> updatedEvents = List.from(pet.medicalHistory ?? []);
+      updatedEvents.removeWhere((event) => event.id == eventToDelete.id); // Remove by ID
+
+      final updatedPet = pet.copyWith(medicalHistory: updatedEvents);
+
+      try {
+        final updatePetAction = ref.read(updatePetProvider);
+        await updatePetAction(updatedPet);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Medical event deleted successfully!')),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error deleting medical event: ${e.toString()}')),
         );
       }
       // PetDetailScreen will rebuild due to petByIdProvider update.
