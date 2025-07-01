@@ -11,7 +11,7 @@ import 'package:paw_sync/core/auth/providers/auth_providers.dart'; // Import aut
 import 'package:paw_sync/core/auth/screens/login_screen.dart';
 import 'package:paw_sync/core/auth/screens/sign_up_screen.dart'; // Import SignUpScreen
 import 'package:paw_sync/core/auth/screens/splash_screen.dart';
-import 'package:paw_sync/features/pet_profile/screens/add_pet_screen.dart'; // Import AddPetScreen
+import 'package:paw_sync/features/pet_profile/screens/save_pet_screen.dart'; // Renamed from add_pet_screen
 import 'package:paw_sync/features/pet_profile/screens/pet_detail_screen.dart'; // Import PetDetailScreen
 import 'package:paw_sync/features/pet_profile/screens/pet_profile_screen.dart';
 // TODO: Import other screens as they are created.
@@ -25,6 +25,7 @@ class AppRoutes {
   static const String signUp = '/signUp'; // Route for the sign-up screen
   static const String addPet = '/add-pet'; // Route for adding a new pet
   static const String petDetail = '/pet/:petId'; // Route for viewing pet details
+  static const String editPet = '/pet/:petId/edit'; // Route for editing a pet
   // Add other route names here e.g.
 }
 
@@ -163,7 +164,8 @@ class AppRouter {
           path: AppRoutes.addPet,
           name: AppRoutes.addPet,
           builder: (BuildContext context, GoRouterState state) {
-            return const AddPetScreen();
+            // Navigating to SavePetScreen in "Add Mode" (no petIdForEdit)
+            return const SavePetScreen();
           },
           // This route should only be accessible if logged in.
           // The main redirect logic already handles redirecting to login if not authenticated.
@@ -188,6 +190,23 @@ class AppRouter {
           },
           // This route should only be accessible if logged in.
           // The main redirect logic already handles this.
+        ),
+
+        // Edit Pet Screen Route
+        GoRoute(
+          path: AppRoutes.editPet, // e.g., /pet/123/edit
+          name: AppRoutes.editPet,
+          builder: (BuildContext context, GoRouterState state) {
+            final petId = state.pathParameters['petId'];
+            final Pet? pet = state.extra as Pet?; // Receive the Pet object as an extra
+
+            if (petId == null) {
+              print('Error: petId is null for editPet route');
+              return const Scaffold(body: Center(child: Text('Error: Pet ID missing for edit')));
+            }
+            // Pass petId for fetching if needed, and pet as initialData
+            return SavePetScreen(petIdForEdit: petId, initialPetData: pet);
+          },
         ),
       ],
 
