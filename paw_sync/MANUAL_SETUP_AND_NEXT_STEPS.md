@@ -1,6 +1,6 @@
-# Paw Sync: Manual Setup, Current Status, and Next Steps Guide
+# Paw Sync: Manual Setup, V1 Status, and Next Steps Guide
 
-This document provides essential manual setup instructions to get the Paw Sync Flutter application running after the codebase has been generated or updated by an automated agent. It also outlines the current development status, key placeholders, and potential next steps.
+This document provides essential manual setup instructions to get the Paw Sync Flutter application running. It also outlines the V1 development status, key remaining placeholders, and potential future development directions.
 
 ## 1. Essential Manual Setup Commands
 
@@ -34,7 +34,7 @@ Due to limitations in automated environments, several crucial steps MUST be perf
         *   Guide you to select your Firebase project (see Section 2 below).
         *   Automatically generate `lib/firebase_options.dart`, which is essential for initializing Firebase in `main.dart`.
         *   Help set up platform-specific Firebase configurations (though you might still need to manually add downloaded config files for existing projects - see Section 2.2).
-    *   **Important:** When prompted, ensure you select the correct Firebase project and register the app for the platforms you intend to support (iOS, Android, Web, etc.).
+    *   **Important:** When prompted, ensure you select the correct Firebase project and register the app for the platforms you intend to support (iOS, Android, Web, etc.). Don't forget to add SHA-1 keys for Android for Google Sign-In to work.
 
 5.  **Generate Missing Platform Files (If Necessary):**
     If core platform directories (`android`, `ios`, `linux`, `macos`, `windows`, `web`) or other essential project files (like `analysis_options.yaml`) seem to be missing or incomplete after the previous steps, run:
@@ -60,65 +60,104 @@ Before running `flutterfire configure`, you need a Firebase project.
 
 3.  **Enable Firebase Services:**
     *   In the Firebase Console, ensure you have enabled the necessary services for Paw Sync:
-        *   **Authentication:** (e.g., Email/Password, Google Sign-In). For Google Sign-In, you'll need to configure OAuth consent screen and provide SHA-1 fingerprints for Android.
+        *   **Authentication:** Email/Password and Google Sign-In must be enabled. For Google Sign-In, you'll need to configure OAuth consent screen and provide SHA-1 fingerprints for Android in your Firebase project settings.
         *   **Cloud Firestore:** (Database). Create a Firestore database and set up security rules (e.g., start in test mode, then refine).
-        *   **Cloud Storage for Firebase:** (File storage). Set up storage and security rules.
+        *   **Cloud Storage for Firebase:** (File storage). Set up storage and security rules. This will be needed for pet photo uploads.
 
-## 3. Current Codebase Status & Key Placeholders
+## 3. V1 Application Status (As of [Current Date - User to fill])
 
-The agent has set up a foundational structure. Here's a summary of what's in place and what needs attention:
+The application has reached a V1 milestone with the following core features implemented:
 
 *   **Core Architecture:**
-    *   **State Management:** Riverpod is set up with providers for repositories, services, and notifiers (e.g., `AuthNotifier`).
-    *   **Navigation:** GoRouter is configured with basic routes in `lib/core/routing/app_router.dart`.
-    *   **Theming:** A theme is defined in `lib/core/theme/theme.dart` with a pastel color palette, typography scale, and some component themes. Custom themed widgets (`themed_buttons.dart`, `styled_card.dart`) exist.
-    *   **Localization:** Setup for English and French using `.arb` files and `flutter_localizations`.
-    *   **Models:** `UserModel`, `PetModel` (with `VaccinationRecord`, `MedicalEvent`, `GroomingPreferences`, `BehaviorProfile`), `BusinessModel` (with `OperatingHours`), `ReminderModel`, `UserSettingsModel` are defined.
-    *   **Repositories:** Interfaces (`AuthRepository`, `PetRepository`, `BusinessRepository`, `ReminderRepository`, `UserSettingsRepository`) and Firebase implementations (`FirebaseAuthRepository`, `FirebasePetRepository`) are defined. Others are API-only.
-    *   **Services:** Interfaces (`NotificationService`, `StorageService`, `AnalyticsService`) are defined with API-only providers.
-    *   **Utilities:** Centralized `enums.dart` and `constants.dart` (for Firestore collection names) are in place.
+    *   **State Management:** Riverpod is used for managing state, with providers for repositories, services (API only), and notifiers (`AuthNotifier`).
+    *   **Navigation:** GoRouter handles navigation, including a basic error page for unknown routes.
+    *   **Theming:** A base theme is defined.
+    *   **Localization:** Setup for English and French.
+    *   **Models:** Core data models (`UserModel`, `PetModel` with sub-models, `BusinessModel`, `ReminderModel`, `UserSettingsModel`) are defined.
+    *   **Repositories:** `AuthRepository` and `PetRepository` have Firebase implementations. Others are API-only.
 
-*   **Key Placeholders & TODOs:**
-    *   **`signInWithGoogle()` in `FirebaseAuthRepository`:**
-        *   **File:** `lib/core/auth/repositories/firebase_auth_repository.dart`
-        *   **Issue:** Currently throws `UnimplementedError`.
-        *   **Action:** Requires adding the `google_sign_in` package (see `pubspec.yaml` TODOs), running `flutter pub get`, implementing logic, and platform-specific Firebase/Google Cloud setup.
-    *   **Image Assets:**
-        *   **Files:** `login_screen.dart`, `pet_profile_screen.dart` reference placeholder image assets (e.g., `assets/images/google_logo.png`, `assets/images/dog_placeholder.png`).
-        *   **Issue:** These asset files do not exist.
-        *   **Action:** Create `assets/images/`, add images, declare in `pubspec.yaml` (see commented examples), and run `flutter pub get`.
-    *   **Notifier Implementations (Beyond AuthNotifier):**
-        *   While `AuthNotifier` is drafted, notifiers for other features (Pet Profiles, Reminders, Businesses, UserSettings) need to be created to manage their respective states and business logic.
-    *   **Repository Implementations (Beyond Auth & Pet):**
-        *   `BusinessRepository`, `ReminderRepository`, `UserSettingsRepository` have API-only providers. Concrete Firebase (or other) implementations need to be written.
-    *   **Service Implementations:**
-        *   `NotificationService`, `StorageService`, `AnalyticsService` have API-only providers. Concrete implementations are needed.
-    *   **UI to Logic Connection:**
-        *   Most UI screens (`LoginScreen`, `PetProfileScreen`, etc.) are static placeholders. They need to be connected to Riverpod providers and notifiers to display real data and handle user interactions.
-    *   **Review General TODOs:** Search the codebase for "TODO:" comments for other specific items.
+*   **Implemented Features (V1):**
+    *   **User Authentication:**
+        *   Sign Up with Email/Password.
+        *   Login with Email/Password.
+        *   Login with Google.
+        *   Password Reset via email.
+        *   Logout.
+    *   **Pet Management (CRUD):**
+        *   **Create:** Add new pets with basic details (name, species, breed, birth date, photo URL via text input).
+        *   **Read (List):** View a list of the current user's pets on the "My Pets" screen, with real-time updates from Firestore. Handles loading, error, and empty states.
+        *   **Read (Details):** View a detailed screen for each pet, showing all its information (including photo if URL provided).
+        *   **Update:** Edit the basic details of an existing pet.
+        *   **Delete:** Delete pets with a confirmation dialog.
+    *   **Basic Placeholders:**
+        *   A placeholder "Notifications" screen is accessible from the "My Pets" screen.
 
-## 4. Potential Next Development Steps (After Manual Setup)
+## 4. Key Remaining Placeholders & Future Enhancements
 
-Once the manual setup is complete and the app can compile and run with Firebase connected:
+While V1 is functional, many areas are placeholders or have TODOs for future development:
 
-1.  **Implement `signInWithGoogle` fully.**
-2.  **Add image assets and verify they load.**
-3.  **Develop Notifiers/Controllers:** Implement `AsyncNotifier` or `StateNotifier` classes for Pet Profiles, Reminders, Businesses, UserSettings, etc.
-4.  **Implement Remaining Repositories:** Provide Firebase implementations for `BusinessRepository`, `ReminderRepository`, `UserSettingsRepository`.
-5.  **Implement Services:** Provide concrete implementations for `NotificationService`, `StorageService`, `AnalyticsService`.
-6.  **Connect UI to Logic:**
-    *   Refactor UI screens to be `ConsumerWidget` or use `Consumer`s.
-    *   Fetch and display data from providers/notifiers.
-    *   Wire up buttons and forms to call methods on notifiers/providers.
-7.  **Build out UI for other features** as per the project plan (e.g., Add/Edit Pet screen, Pet Detail screen, Reminder creation, Business listings).
-8.  **Implement Navigation:** Refine GoRouter setup, ensure navigation between screens works as expected. Uncomment and implement the auth redirect logic in `app_router.dart` using `AuthNotifier` state.
-9.  **Testing:** Write unit, widget, and integration tests for new logic and UI.
-10. **Security Rules:** Implement robust Firebase security rules for Firestore and Storage.
+*   **Pet Profile Feature Completeness:**
+    *   **Image Picking/Uploading:** Implement pet photo uploads using `image_picker` and `firebase_storage` (currently a text input for URL).
+    *   **Detailed Data Management for Pets:** The "Add/Edit Pet" screen currently handles basic fields. Future work includes UI and logic for managing:
+        *   Vaccination Records (add, edit, delete individual records).
+        *   Medical History events (add, edit, delete events, handle attachments).
+        *   Grooming Preferences (dedicated UI for these fields).
+        *   Behavior Profile (dedicated UI for these fields).
+*   **Notifications Feature:**
+    *   Implement actual notification functionality (local and/or push via Firebase Cloud Messaging) to replace the placeholder screen.
+    *   Connect to `NotificationService`.
+*   **User Settings Feature:**
+    *   Create a UI for managing user settings (e.g., notification preferences, theme choice).
+    *   Implement `UserSettingsRepository` (Firebase).
+    *   Develop a `UserSettingsNotifier`.
+*   **Business Listings & Management Feature (Major Area):**
+    *   Implement `BusinessRepository` (Firebase) with features like search, pagination, reviews.
+    *   Develop UI screens for discovering, viewing, and potentially managing businesses.
+    *   Create `BusinessNotifier`.
+*   **Reminders Feature (Major Area):**
+    *   Implement `ReminderRepository` (Firebase).
+    *   Develop UI screens for creating, viewing, and managing reminders (e.g., for vaccinations, appointments).
+    *   Integrate with local notifications.
+    *   Create `ReminderNotifier`.
+*   **Service Implementations:**
+    *   Provide concrete Firebase implementations for `AnalyticsService` and `StorageService`.
+*   **UI/UX Polish & Enhancements:**
+    *   Implement Dark Theme and theme switching.
+    *   Improve form inputs (e.g., dropdown for pet species).
+    *   Enhance error messages to be more user-friendly.
+    *   Add actual image assets for placeholders (e.g., default pet photo).
+*   **Technical Debt & Refinements:**
+    *   Address `pubspec.yaml` TODOs for future dependencies (e.g., maps, advanced phone input, `freezed` for models).
+    *   Write comprehensive unit, widget, and integration tests.
+    *   Review and enhance Firebase Security Rules for production.
+    *   Address platform-specific build TODOs (Android signing, etc.).
 
-## 5. Conceptual Error Handling Strategy
+## 5. Potential Next Development Steps (Post-V1)
 
-A consistent approach to error handling improves user experience and maintainability.
+Based on the V1 status, logical next steps could include:
 
+1.  **Full Pet Profile Management:**
+    *   Implement image uploading for pet photos.
+    *   Build UI for adding/editing detailed pet sub-records (vaccinations, medical history, grooming, behavior).
+2.  **Core Feature Implementation - Reminders:**
+    *   Develop the reminder creation, listing, and notification logic. This is a high-value feature for pet owners.
+3.  **Core Feature Implementation - Business Listings (Basic):**
+    *   Start with displaying a list of businesses (if data source exists or is mocked/manually populated in Firebase).
+    *   Allow viewing business details.
+4.  **User Settings:**
+    *   Implement a basic user settings screen (e.g., for notification preferences if notifications are being worked on).
+5.  **UI/UX Polish:**
+    *   Implement Dark Theme.
+    *   Improve form usability (e.g., species dropdown).
+6.  **Testing and Robustness:**
+    *   Increase test coverage.
+    *   Strengthen Firebase security rules.
+
+Prioritization will depend on user feedback and project goals.
+
+## 6. Conceptual Error Handling Strategy (General Guide)
+
+(This section can largely remain as is from the previous version, as it's general guidance)
 *   **Repository Exceptions:** Custom exceptions like `AuthRepositoryException`, `PetRepositoryException`, etc., wrap underlying errors.
 *   **Notifier/State Management:** `AsyncNotifier` and `AsyncValue` are used to manage loading, data, and error states. UI uses `state.when()` for display.
 *   **User-Friendly Messages:** Plan for a utility to map error codes/types to localized, user-friendly messages.
@@ -131,8 +170,9 @@ A consistent approach to error handling improves user experience and maintainabi
 *   **Global Error Handling/Logging:** Consider `PlatformDispatcher.instance.onError` and integration with crash reporting (e.g., Firebase Crashlytics).
 *   **Specific Scenarios:** Plan for network issues, Firebase errors, validation errors, etc.
 
-## 6. UI Style and Theming Decisions (Conceptual)
+## 7. UI Style and Theming Decisions (General Guide)
 
+(This section can also largely remain as is, as it describes the established style)
 *   **Color Palette:** Aims for a **pastel and less "pop"** base (Muted Blue/Lavender primary, Softer Teal secondary), with a vibrant `highlight` color for CTAs. See `lib/core/theme/theme.dart` (`AppColors`).
 *   **Typography:** Uses 'Roboto' (default) and 'RobotoSlab' (headings) as placeholders. `TextTheme` in `theme.dart` maps to Material Design scale.
 *   **Custom Themed Widgets:**
