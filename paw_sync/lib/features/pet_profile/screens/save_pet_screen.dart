@@ -1,14 +1,18 @@
 // lib/features/pet_profile/screens/add_pet_screen.dart
+import 'dart:io'; // For File type
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart'; // Import image_picker
 import 'package:intl/intl.dart'; // For date formatting
-import 'package:paw_sync/core/auth/providers/auth_providers.dart'; // For currentUserIdProvider indirectly via pet_providers
+import 'package:paw_sync/core/auth/providers/auth_providers.dart';
 import 'package:paw_sync/features/pet_profile/models/pet_model.dart';
 import 'package:paw_sync/features/pet_profile/providers/pet_providers.dart';
 import 'package:paw_sync/core/widgets/themed_buttons.dart';
+import 'package:paw_sync/core/services/service_providers.dart'; // Import StorageService provider
+import 'package:uuid/uuid.dart'; // Import Uuid
 
 class SavePetScreen extends ConsumerStatefulWidget {
-  final String? petIdForEdit; // Changed from existingPet
+  final String? petIdForEdit;
   final Pet?
       initialPetData; // Optional: if we already have the data from previous screen
 
@@ -23,8 +27,9 @@ class _SavePetScreenState extends ConsumerState<SavePetScreen> {
   late TextEditingController _nameController;
   late TextEditingController _speciesController;
   late TextEditingController _breedController;
-  late TextEditingController _photoUrlController;
+  // late TextEditingController _photoUrlController; // Removed, will use _pickedImageFile and _loadedPetForEdit.photoUrl
   DateTime? _selectedBirthDate;
+  File? _pickedImageFile; // To store the picked image file
 
   Pet? _loadedPetForEdit; // To store the fetched pet data in edit mode
   bool _isScreenLoading = false; // For loading pet data in edit mode
@@ -38,7 +43,7 @@ class _SavePetScreenState extends ConsumerState<SavePetScreen> {
     _nameController = TextEditingController();
     _speciesController = TextEditingController();
     _breedController = TextEditingController();
-    _photoUrlController = TextEditingController();
+    // _photoUrlController = TextEditingController(); // Removed
 
     if (_isEditMode) {
       if (widget.initialPetData != null) {
@@ -87,10 +92,9 @@ class _SavePetScreenState extends ConsumerState<SavePetScreen> {
     _nameController.text = pet.name;
     _speciesController.text = pet.species;
     _breedController.text = pet.breed ?? '';
-    _photoUrlController.text = pet.photoUrl ?? '';
+    // _photoUrlController.text = pet.photoUrl ?? ''; // Removed
     _selectedBirthDate = pet.birthDate;
-    // Update text controller for birth date if it's separate
-    // This is handled by the TextFormField's controller logic later
+    // _pickedImageFile remains null initially, photo displayed from pet.photoUrl
     setState(() {}); // Ensure UI rebuilds with populated date if needed
   }
 
@@ -99,8 +103,28 @@ class _SavePetScreenState extends ConsumerState<SavePetScreen> {
     _nameController.dispose();
     _speciesController.dispose();
     _breedController.dispose();
-    _photoUrlController.dispose();
+    // _photoUrlController.dispose(); // Removed
     super.dispose();
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final pickedFile = await ImagePicker().pickImage(
+        source: source,
+        imageQuality: 80, // Compress image slightly
+        maxWidth: 800,     // Resize image
+      );
+      if (pickedFile != null) {
+        setState(() {
+          _pickedImageFile = File(pickedFile.path);
+        });
+      }
+    } catch (e) {
+      // Handle exceptions, e.g., permissions
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error picking image: ${e.toString()}')),
+      );
+    }
   }
 
   Future<void> _selectBirthDate(BuildContext context) async {
@@ -138,17 +162,46 @@ class _SavePetScreenState extends ConsumerState<SavePetScreen> {
         return;
       }
 
+      String? finalPhotoUrl = _isEditMode ? _loadedPetForEdit?.photoUrl : null;
+      String petIdToUse = _isEditMode ? _loadedPetForEdit!.id : const Uuid().v4();
+
+      if (_pickedImageFile != null) {
+        if (currentUserId == null) {
+           ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Error: User ID not found for image upload.')),
+          );
+          setState(() { _isSaving = false; });
+          return;
+        }
+        try {
+          final storageService = ref.read(storageServiceProvider);
+          // Using a consistent file name for simplicity, e.g., profile_photo.jpg
+          // Or generate a unique name if multiple photos per pet are expected later.
+          const photoFileName = 'profile_photo.jpg';
+          finalPhotoUrl = await storageService.uploadPetProfileImage(
+            imageFile: _pickedImageFile!,
+            userId: currentUserId, // currentUserId should be valid here if not editing
+            petId: petIdToUse,
+            fileName: photoFileName,
+          );
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error uploading image: ${e.toString()}')),
+          );
+          setState(() { _isSaving = false; });
+          return; // Stop submission if image upload fails
+        }
+      }
+
+
       if (_isEditMode) {
         // Update existing pet
-        final updatedPet = _loadedPetForEdit!.copyWith( // Use _loadedPetForEdit
+        final updatedPet = _loadedPetForEdit!.copyWith(
           name: _nameController.text.trim(),
           species: _speciesController.text.trim(),
           breed: _breedController.text.trim().isNotEmpty ? _breedController.text.trim() : null,
           birthDate: _selectedBirthDate,
-          photoUrl: _photoUrlController.text.trim().isNotEmpty ? _photoUrlController.text.trim() : null,
-          // Ensure other complex fields like vaccinationRecords, medicalHistory are preserved
-          // or handled if they are editable on this screen (currently they are not).
-          // copyWith should preserve them if not provided.
+          photoUrl: finalPhotoUrl, // Use the potentially updated photoUrl
         );
 
         try {
@@ -159,10 +212,6 @@ class _SavePetScreenState extends ConsumerState<SavePetScreen> {
             SnackBar(content: Text('${updatedPet.name} updated successfully!')),
           );
           if (mounted) {
-            // Potentially pop twice if coming from Detail -> Edit
-            // Or use GoRouter to navigate back to the detail screen specifically.
-            // For now, a single pop might go back to PetDetailScreen or PetProfileScreen
-            // depending on how navigation to edit was set up.
             Navigator.of(context).pop();
           }
         } catch (e) {
@@ -173,20 +222,18 @@ class _SavePetScreenState extends ConsumerState<SavePetScreen> {
 
       } else {
         // Add new pet
-        // Let Firestore generate the ID by passing an empty string or ensuring Pet model handles it.
-        // The existing FirebasePetRepository handles empty ID by letting Firestore generate it.
         final newPet = Pet(
-          id: '', // Firestore will generate this
-          ownerId: currentUserId,
+          id: petIdToUse, // Use client-generated ID
+          ownerId: currentUserId!, // currentUserId is checked above for add mode if image picked
           name: _nameController.text.trim(),
           species: _speciesController.text.trim(),
           breed: _breedController.text.trim().isNotEmpty ? _breedController.text.trim() : null,
           birthDate: _selectedBirthDate,
-          photoUrl: _photoUrlController.text.trim().isNotEmpty ? _photoUrlController.text.trim() : null,
-          vaccinationRecords: [], // Initialize as empty for new pet
-          medicalHistory: [], // Initialize as empty for new pet
-          groomingPreferences: widget.existingPet?.groomingPreferences, // Preserve if somehow editing a new pet form template
-          behaviorProfile: widget.existingPet?.behaviorProfile, // Preserve
+          photoUrl: finalPhotoUrl, // Use the potentially uploaded photoUrl
+          vaccinationRecords: [],
+          medicalHistory: [],
+          groomingPreferences: null,
+          behaviorProfile: null,
         );
 
         try {
@@ -197,7 +244,7 @@ class _SavePetScreenState extends ConsumerState<SavePetScreen> {
             SnackBar(content: Text('${newPet.name} added successfully!')),
           );
           if (mounted) {
-            Navigator.of(context).pop(); // Go back to pet profile screen
+            Navigator.of(context).pop();
           }
         } catch (e) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -205,18 +252,15 @@ class _SavePetScreenState extends ConsumerState<SavePetScreen> {
           );
         }
       }
-
-    } catch (e) { // This outer catch is likely redundant if inner try-catches handle specifics
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('An unexpected error occurred: ${e.toString()}')),
-        );
-      } finally {
-        if (mounted) {
-          setState(() {
-            _isLoading = false;
-          });
-        }
+    } // main if (_formKey.currentState?.validate() ?? false)
+    // No outer catch here, specific catches are inside.
+    finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
       }
+    }
     }
   }
 
@@ -238,8 +282,50 @@ class _SavePetScreenState extends ConsumerState<SavePetScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
-                    Text('Pet Details', style: textTheme.titleLarge?.copyWith(color: colorScheme.primary)),
+                    // Image Picker Section
+                    Center(
+                      child: Column(
+                        children: [
+                          Container(
+                            width: 150,
+                            height: 150,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[300],
+                              borderRadius: BorderRadius.circular(75),
+                              border: Border.all(color: colorScheme.primary, width: 2),
+                              image: _pickedImageFile != null
+                                  ? DecorationImage(image: FileImage(_pickedImageFile!), fit: BoxFit.cover)
+                                  : (_isEditMode && _loadedPetForEdit?.photoUrl != null && _loadedPetForEdit!.photoUrl!.isNotEmpty)
+                                      ? DecorationImage(image: NetworkImage(_loadedPetForEdit!.photoUrl!), fit: BoxFit.cover)
+                                      : null,
+                            ),
+                            child: (_pickedImageFile == null && (_isEditMode == false || _loadedPetForEdit?.photoUrl == null || _loadedPetForEdit!.photoUrl!.isEmpty))
+                                ? Icon(Icons.pets, size: 80, color: Colors.grey[700])
+                                : null,
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              TextButton.icon(
+                                icon: const Icon(Icons.photo_library_outlined),
+                                label: const Text('Gallery'),
+                                onPressed: () => _pickImage(ImageSource.gallery),
+                              ),
+                              const SizedBox(width: 10),
+                              TextButton.icon(
+                                icon: const Icon(Icons.camera_alt_outlined),
+                                label: const Text('Camera'),
+                                onPressed: () => _pickImage(ImageSource.camera),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
                     const SizedBox(height: 24),
+                    Text('Pet Details', style: textTheme.titleLarge?.copyWith(color: colorScheme.primary)),
+                    const SizedBox(height: 16), // Adjusted spacing
 
                     // Name Field
                     TextFormField(
@@ -292,13 +378,11 @@ class _SavePetScreenState extends ConsumerState<SavePetScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Photo URL Field
-                    TextFormField(
-                      controller: _photoUrlController,
-                      decoration: const InputDecoration(labelText: 'Photo URL (Optional)'),
-                      keyboardType: TextInputType.url,
-                      // No validator, as it's optional. Basic URL validation could be added later.
-                    ),
+              // Photo URL Field is now replaced by the image picker UI above.
+              // We might want a way to clear/remove an existing photo without picking a new one.
+              // This could be a small button next to the image preview if an image exists.
+              // For V1 of image upload, we'll focus on picking/replacing.
+
                     const SizedBox(height: 32),
 
                     PrimaryActionButton(

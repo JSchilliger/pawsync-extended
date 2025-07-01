@@ -52,13 +52,13 @@ dependencies:
   google_sign_in: ^6.2.1 # Added for Google Sign-In functionality
 
   # TODO (UI/UX): Add image_picker for selecting photos (pet profiles, user profiles).
-  # image_picker: ^latest_version
+  image_picker: ^1.1.0 # For picking images from gallery/camera
 
   # TODO (UI/UX): Add intl_phone_field for formatted phone number input if needed for user/business profiles.
   # intl_phone_field: ^latest_version # Or other phone input packages like phone_form_field
 
   # TODO (Utility): Add uuid for generating unique IDs client-side (e.g., for MedicalEvent, other local models).
-  # uuid: ^latest_version
+  uuid: ^4.4.0 # For generating unique IDs (e.g., for new pets)
 
   # TODO (Maps/Location): Add google_maps_flutter or flutter_map if map features are planned.
   # google_maps_flutter: ^latest_version # Requires platform setup
