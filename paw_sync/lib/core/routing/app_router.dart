@@ -5,6 +5,7 @@
 import 'dart:async'; // For StreamSubscription
 
 import 'package:flutter/material.dart';
+import 'package:paw_sync/features/pet_profile/models/pet_model.dart'; // Added Pet model import
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:paw_sync/core/auth/providers/auth_providers.dart'; // Import auth providers
