@@ -14,6 +14,8 @@ import 'package:paw_sync/core/auth/screens/splash_screen.dart';
 import 'package:paw_sync/features/pet_profile/screens/save_pet_screen.dart'; // Renamed from add_pet_screen
 import 'package:paw_sync/features/pet_profile/screens/pet_detail_screen.dart'; // Import PetDetailScreen
 import 'package:paw_sync/features/pet_profile/screens/pet_profile_screen.dart';
+import 'package:paw_sync/core/screens/notifications_screen.dart'; // Import NotificationsScreen
+import 'package:paw_sync/core/screens/error_screen.dart'; // Import ErrorScreen
 // TODO: Import other screens as they are created.
 
 // Application route paths.
@@ -26,6 +28,7 @@ class AppRoutes {
   static const String addPet = '/add-pet'; // Route for adding a new pet
   static const String petDetail = '/pet/:petId'; // Route for viewing pet details
   static const String editPet = '/pet/:petId/edit'; // Route for editing a pet
+  static const String notifications = '/notifications'; // Route for notifications
   // Add other route names here e.g.
 }
 
@@ -208,9 +211,20 @@ class AppRouter {
             return SavePetScreen(petIdForEdit: petId, initialPetData: pet);
           },
         ),
+
+        // Notifications Screen Route
+        GoRoute(
+          path: AppRoutes.notifications,
+          name: AppRoutes.notifications,
+          builder: (BuildContext context, GoRouterState state) {
+            return const NotificationsScreen();
+          },
+          // This route should only be accessible if logged in.
+          // The main redirect logic already handles this.
+        ),
       ],
 
-      // TODO: Add an error builder for handling unknown routes gracefully.
+      errorBuilder: (context, state) => ErrorScreen(error: state.error),
       // errorBuilder: (context, state) => ErrorScreen(error: state.error),
     );
   }

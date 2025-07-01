@@ -27,8 +27,8 @@ class PetProfileScreen extends ConsumerWidget {
             icon: const Icon(Icons.notifications_none_outlined),
             tooltip: 'Notifications',
             onPressed: () {
-              // TODO: Navigate to notifications screen or show dialog
-              print('Notifications icon pressed');
+              GoRouter.of(context).push(AppRoutes.notifications);
+              print('Notifications icon pressed, navigating to ${AppRoutes.notifications}');
             },
           ),
           IconButton(

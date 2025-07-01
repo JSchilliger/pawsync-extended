@@ -21,19 +21,75 @@ class PetDetailScreen extends ConsumerWidget {
         title: Text(petAsyncValue.value?.name ?? 'Pet Details'), // Show pet name if loaded
         actions: [
           petAsyncValue.when(
-            data: (pet) => pet == null ? const SizedBox.shrink() : IconButton(
-              icon: const Icon(Icons.edit_outlined),
-              tooltip: 'Edit Pet',
-              onPressed: () {
-                // Navigate to SavePetScreen in edit mode
-                GoRouter.of(context).pushNamed(
-                  AppRoutes.editPet,
-                  pathParameters: {'petId': petId},
-                  extra: pet, // Pass the loaded pet data as extra
-                );
-              },
-            ),
-            loading: () => const SizedBox.shrink(), // Or a disabled button
+            data: (pet) {
+              if (pet == null) return const SizedBox.shrink();
+              return Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.edit_outlined),
+                    tooltip: 'Edit Pet',
+                    onPressed: () {
+                      GoRouter.of(context).pushNamed(
+                        AppRoutes.editPet,
+                        pathParameters: {'petId': petId},
+                        extra: pet,
+                      );
+                    },
+                  ),
+                  PopupMenuButton<String>(
+                    onSelected: (value) async {
+                      if (value == 'delete') {
+                        // Show confirmation dialog
+                        final bool? confirmed = await showDialog<bool>(
+                          context: context,
+                          builder: (BuildContext dialogContext) {
+                            return AlertDialog(
+                              title: const Text('Confirm Deletion'),
+                              content: Text('Are you sure you want to delete ${pet.name}? This action cannot be undone.'),
+                              actions: <Widget>[
+                                TextButton(
+                                  child: const Text('Cancel'),
+                                  onPressed: () => Navigator.of(dialogContext).pop(false),
+                                ),
+                                TextButton(
+                                  child: Text('Delete', style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                                  onPressed: () => Navigator.of(dialogContext).pop(true),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+
+                        if (confirmed == true) {
+                          try {
+                            await ref.read(deletePetProvider)(petId);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('${pet.name} deleted successfully.')),
+                            );
+                            // Navigate back to pet list screen
+                            if (context.mounted) GoRouter.of(context).go(AppRoutes.home);
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Error deleting pet: ${e.toString()}')),
+                            );
+                          }
+                        }
+                      }
+                    },
+                    itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                      const PopupMenuItem<String>(
+                        value: 'delete',
+                        child: ListTile(
+                          leading: Icon(Icons.delete_outline),
+                          title: Text('Delete Pet'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              );
+            },
+            loading: () => const SizedBox.shrink(),
             error: (_, __) => const SizedBox.shrink(),
           ),
         ],
