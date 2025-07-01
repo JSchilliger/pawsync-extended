@@ -325,29 +325,32 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     // so we directly call the method. Feedback is manual via SnackBar.
                     await ref.read(authNotifierProvider.notifier).sendPasswordResetEmail(email: email);
 
-                    Navigator.of(dialogContext).pop(); // Close dialog
-
-                    if (mounted) { // Check if the widget is still in the tree
+                    // Show SnackBar first, then pop. Ensure widget is still mounted.
+                    if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('Password reset email sent to $email.'),
+                          content: Text('Password reset email sent to $email. Please check your inbox (and spam folder).'),
                           backgroundColor: Colors.green,
                         ),
                       );
+                      Navigator.of(dialogContext).pop(); // Close dialog AFTER showing SnackBar
                     }
                   } catch (e) {
-                    // Error handling directly here for the dialog's context
-                    Navigator.of(dialogContext).pop(); // Close dialog
-                    if (mounted) { // Check if the widget is still in the tree
-                      final errorMessage = e is AuthRepositoryException ? e.message : e.toString();
-                      ScaffoldMessenger.of(context).showSnackBar(
+                    final errorMessage = e is AuthRepositoryException ? e.message : e.toString();
+                    // Show SnackBar first, then pop. Ensure widget is still mounted.
+                    if (mounted) {
+                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text('Error: $errorMessage'),
                           backgroundColor: Theme.of(context).colorScheme.error,
                         ),
                       );
+                      Navigator.of(dialogContext).pop(); // Close dialog AFTER showing SnackBar
                     }
                   } finally {
+                     // Dispose the controller only if the button was pressed.
+                     // If dialog dismissed otherwise, it won't be disposed here.
+                     // For robust disposal, dialog content could be a StatefulWidget.
                      emailController.dispose();
                   }
                 }

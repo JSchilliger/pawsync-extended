@@ -96,4 +96,21 @@ class AuthNotifier extends AsyncNotifier<fb_auth.User?> {
       state = AsyncError(e, s);
     }
   }
+
+  /// Sends a password reset email to the given email address.
+  ///
+  /// This method does not change the main authentication state ([state]) of the notifier
+  /// as it's an out-of-band action. Errors from the repository will be propagated
+  /// and should be handled by the caller (e.g., in the UI).
+  Future<void> sendPasswordResetEmail({required String email}) async {
+    // No state = const AsyncLoading() here, as this action doesn't directly log in/out the user.
+    // The UI calling this should handle its own loading indicators if needed.
+    try {
+      await ref.read(authRepositoryProvider).sendPasswordResetEmail(email: email);
+    } catch (e) {
+      // Re-throw the error to be caught by the caller in the UI.
+      // This allows the UI to display specific error messages.
+      rethrow;
+    }
+  }
 }
