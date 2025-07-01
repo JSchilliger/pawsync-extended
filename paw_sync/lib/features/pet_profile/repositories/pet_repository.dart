@@ -45,13 +45,17 @@ abstract class PetRepository {
 /// Custom exception for errors occurring in the PetRepository.
 class PetRepositoryException implements Exception {
   final String message;
+  final String? code; // Ajout du code d'erreur optionnel
   final dynamic underlyingException; // Optional: To store the original exception
 
-  PetRepositoryException(this.message, [this.underlyingException]);
+  PetRepositoryException(this.message, {this.code, this.underlyingException}); // Constructeur mis à jour
 
   @override
   String toString() {
     String result = 'PetRepositoryException: $message';
+    if (code != null) {
+      result += ' (Code: $code)';
+    }
     if (underlyingException != null) {
       result += '\nUnderlying exception: $underlyingException';
     }

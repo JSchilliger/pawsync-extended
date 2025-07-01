@@ -1,6 +1,6 @@
 // lib/core/auth/screens/login_screen.dart
 // This screen will handle user login (Email/Password and Google Sign-In).
-
+import 'package:paw_sync/core/auth/repositories/auth_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:paw_sync/core/auth/providers/auth_providers.dart'; // Import AuthNotifier provider

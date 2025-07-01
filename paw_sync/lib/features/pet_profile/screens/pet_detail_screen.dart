@@ -1,4 +1,6 @@
 // lib/features/pet_profile/screens/pet_detail_screen.dart
+import 'package:go_router/go_router.dart';
+import 'package:paw_sync/core/routing/app_router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart'; // For date formatting

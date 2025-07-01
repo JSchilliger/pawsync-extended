@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:paw_sync/core/auth/providers/auth_providers.dart';
 import 'package:paw_sync/core/routing/app_router.dart';
 import 'package:paw_sync/core/widgets/themed_buttons.dart'; // Assuming themed buttons are general enough
+import 'package:paw_sync/core/auth/repositories/auth_repository.dart';
+
 
 class SignUpScreen extends ConsumerStatefulWidget {
   const SignUpScreen({super.key});
