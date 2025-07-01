@@ -18,8 +18,25 @@ class PetDetailScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Pet Details'),
-        // Potentially add Edit/Delete buttons here in the future
+        title: Text(petAsyncValue.value?.name ?? 'Pet Details'), // Show pet name if loaded
+        actions: [
+          petAsyncValue.when(
+            data: (pet) => pet == null ? const SizedBox.shrink() : IconButton(
+              icon: const Icon(Icons.edit_outlined),
+              tooltip: 'Edit Pet',
+              onPressed: () {
+                // Navigate to SavePetScreen in edit mode
+                GoRouter.of(context).pushNamed(
+                  AppRoutes.editPet,
+                  pathParameters: {'petId': petId},
+                  extra: pet, // Pass the loaded pet data as extra
+                );
+              },
+            ),
+            loading: () => const SizedBox.shrink(), // Or a disabled button
+            error: (_, __) => const SizedBox.shrink(),
+          ),
+        ],
       ),
       body: petAsyncValue.when(
         data: (pet) {
