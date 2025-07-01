@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart'; // For date formatting
 import 'package:paw_sync/features/pet_profile/models/pet_model.dart';
 import 'package:paw_sync/features/pet_profile/providers/pet_providers.dart';
+import 'package:paw_sync/features/pet_profile/widgets/save_vaccination_record_form.dart'; // Import the form
 
 class PetDetailScreen extends ConsumerWidget {
   final String petId;
@@ -157,11 +158,26 @@ class PetDetailScreen extends ConsumerWidget {
                 Divider(),
 
                 // Vaccination Records Section
-                _buildSectionTitle(context, 'Vaccination Records'),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _buildSectionTitle(context, 'Vaccination Records'),
+                    IconButton(
+                      icon: Icon(Icons.add_circle_outline, color: colorScheme.primary),
+                      tooltip: 'Add Vaccination Record',
+                      onPressed: () {
+                        _showSaveVaccinationRecordSheet(context, ref, pet);
+                      },
+                    ),
+                  ],
+                ),
                 if (pet.vaccinationRecords == null || pet.vaccinationRecords!.isEmpty)
-                  const Text('No vaccination records available.')
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: const Text('No vaccination records available.'),
+                  )
                 else
-                  ...pet.vaccinationRecords!.map((record) => _buildVaccinationCard(context, record)).toList(),
+                  ...pet.vaccinationRecords!.map((record) => _buildVaccinationCard(context, ref, pet, record)).toList(),
                 const SizedBox(height: 16),
                 Divider(),
 
@@ -264,7 +280,8 @@ class PetDetailScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildVaccinationCard(BuildContext context, VaccinationRecord record) {
+  Widget _buildVaccinationCard(BuildContext context, WidgetRef ref, Pet pet, VaccinationRecord record) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4.0),
       child: Padding(
@@ -272,7 +289,32 @@ class PetDetailScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(record.vaccineName, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(record.vaccineName, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                ),
+                Row(
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.edit_outlined, size: 20, color: colorScheme.onSurfaceVariant),
+                      tooltip: 'Edit Vaccination',
+                      onPressed: () {
+                        _showSaveVaccinationRecordSheet(context, ref, pet, existingRecord: record);
+                      },
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.delete_outline, size: 20, color: colorScheme.error),
+                      tooltip: 'Delete Vaccination',
+                      onPressed: () {
+                        _confirmDeleteVaccinationRecord(context, ref, pet, record);
+                      },
+                    ),
+                  ],
+                )
+              ],
+            ),
             const SizedBox(height: 4),
             Text('Administered: ${DateFormat.yMMMd().format(record.dateAdministered)}'),
             if (record.nextDueDate != null)
@@ -303,5 +345,119 @@ class PetDetailScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  void _showSaveVaccinationRecordSheet(
+    BuildContext context,
+    WidgetRef ref,
+    Pet pet,
+    {VaccinationRecord? existingRecord}
+  ) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true, // Important for keyboard visibility
+      builder: (BuildContext bottomSheetContext) {
+        return SaveVaccinationRecordForm(
+          pet: pet,
+          existingRecord: existingRecord,
+          onSave: (VaccinationRecord savedRecord) async {
+            List<VaccinationRecord> updatedRecords = List.from(pet.vaccinationRecords ?? []);
+
+            if (existingRecord != null) { // Edit mode
+              // Find the index of the old record and replace it
+              // This relies on VaccinationRecord implementing == correctly or using a unique ID if records had one.
+              // For now, assuming direct object comparison or simple list management.
+              // A more robust way would be to assign unique IDs to each record.
+              final index = updatedRecords.indexWhere((r) =>
+                r.vaccineName == existingRecord.vaccineName &&
+                r.dateAdministered == existingRecord.dateAdministered
+                // Add more fields for robust matching if needed, or use a unique ID
+              );
+              if (index != -1) {
+                updatedRecords[index] = savedRecord;
+              } else {
+                // Fallback or error: old record not found, treat as new? Or show error?
+                // For simplicity, let's add if not found, though this shouldn't happen in pure edit.
+                updatedRecords.add(savedRecord);
+              }
+            } else { // Add mode
+              updatedRecords.add(savedRecord);
+            }
+
+            // Sort records by date administered (descending) for consistent display
+            updatedRecords.sort((a, b) => b.dateAdministered.compareTo(a.dateAdministered));
+
+            final updatedPet = pet.copyWith(vaccinationRecords: updatedRecords);
+
+            try {
+              final updatePetAction = ref.read(updatePetProvider);
+              await updatePetAction(updatedPet);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Vaccination record ${existingRecord != null ? "updated" : "added"} successfully!')),
+              );
+            } catch (e) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Error saving vaccination record: ${e.toString()}')),
+              );
+            }
+            // The PetDetailScreen will rebuild automatically due to petByIdProvider watching changes.
+          },
+        );
+      },
+    );
+  }
+
+  void _confirmDeleteVaccinationRecord(
+    BuildContext context,
+    WidgetRef ref,
+    Pet pet,
+    VaccinationRecord recordToDelete,
+  ) async {
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('Confirm Deletion'),
+          content: Text('Are you sure you want to delete the vaccination record for "${recordToDelete.vaccineName}" administered on ${DateFormat.yMMMd().format(recordToDelete.dateAdministered)}?'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+            ),
+            TextButton(
+              child: Text('Delete', style: TextStyle(color: Theme.of(context).colorScheme.error)),
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed == true) {
+      List<VaccinationRecord> updatedRecords = List.from(pet.vaccinationRecords ?? []);
+      // Remove based on object equality. Assumes VaccinationRecord implements == correctly.
+      // If not, might need to match based on unique properties or add a unique ID to VaccinationRecord.
+      updatedRecords.removeWhere((r) =>
+        r.vaccineName == recordToDelete.vaccineName &&
+        r.dateAdministered == recordToDelete.dateAdministered &&
+        r.nextDueDate == recordToDelete.nextDueDate &&
+        r.veterinarian == recordToDelete.veterinarian
+      );
+
+      final updatedPet = pet.copyWith(vaccinationRecords: updatedRecords);
+
+      try {
+        final updatePetAction = ref.read(updatePetProvider);
+        await updatePetAction(updatedPet);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Vaccination record deleted successfully!')),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error deleting vaccination record: ${e.toString()}')),
+        );
+      }
+      // PetDetailScreen will rebuild due to petByIdProvider update.
+    }
   }
 }
