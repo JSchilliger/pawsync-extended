@@ -7,7 +7,8 @@ import 'package:intl/intl.dart'; // For date formatting
 import 'package:paw_sync/features/pet_profile/models/pet_model.dart';
 import 'package:paw_sync/features/pet_profile/providers/pet_providers.dart';
 import 'package:paw_sync/features/pet_profile/widgets/save_vaccination_record_form.dart';
-import 'package:paw_sync/features/pet_profile/widgets/save_medical_event_form.dart'; // Import the medical event form
+import 'package:paw_sync/features/pet_profile/widgets/save_medical_event_form.dart';
+import 'package:paw_sync/features/pet_profile/widgets/save_grooming_preferences_form.dart'; // Import the grooming form
 
 class PetDetailScreen extends ConsumerWidget {
   final String petId;
@@ -208,17 +209,36 @@ class PetDetailScreen extends ConsumerWidget {
                 const SizedBox(height: 16),
                 Divider(),
 
-                // Grooming Preferences Section (if available)
-                if (pet.groomingPreferences != null) ...[
-                  _buildSectionTitle(context, 'Grooming Preferences'),
+                // Grooming Preferences Section
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _buildSectionTitle(context, 'Grooming Preferences'),
+                    IconButton(
+                      icon: Icon(pet.groomingPreferences != null ? Icons.edit_outlined : Icons.add_circle_outline, color: colorScheme.primary),
+                      tooltip: pet.groomingPreferences != null ? 'Edit Grooming Preferences' : 'Add Grooming Preferences',
+                      onPressed: () {
+                        _showSaveGroomingPreferencesSheet(context, ref, pet);
+                      },
+                    ),
+                  ],
+                ),
+                if (pet.groomingPreferences == null)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: const Text('No grooming preferences set.'),
+                  )
+                else ...[
                   _buildDetailRow(context, 'Preferred Groomer:', pet.groomingPreferences!.preferredGroomer ?? 'N/A'),
                   _buildDetailRow(context, 'Cut Style:', pet.groomingPreferences!.cutStyle ?? 'N/A'),
                   _buildDetailRow(context, 'Frequency:', pet.groomingPreferences!.frequencyInWeeks != null ? '${pet.groomingPreferences!.frequencyInWeeks} weeks' : 'N/A'),
                   if (pet.groomingPreferences!.notes != null && pet.groomingPreferences!.notes!.isNotEmpty)
-                    _buildNotesList(context, 'Notes:', pet.groomingPreferences!.notes!),
+                    _buildNotesList(context, 'Notes:', pet.groomingPreferences!.notes!)
+                  else
+                     _buildDetailRow(context, 'Notes:', 'N/A'),
                   const SizedBox(height: 16),
-                  Divider(),
                 ],
+                Divider(),
 
                 // Behavior Profile Section (if available)
                 if (pet.behaviorProfile != null) ...[
@@ -607,5 +627,44 @@ class PetDetailScreen extends ConsumerWidget {
       }
       // PetDetailScreen will rebuild due to petByIdProvider update.
     }
+  }
+
+  void _showSaveGroomingPreferencesSheet(
+    BuildContext context,
+    WidgetRef ref,
+    Pet pet,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (BuildContext bottomSheetContext) {
+        return SaveGroomingPreferencesForm(
+          existingPreferences: pet.groomingPreferences, // Pass existing or null
+          onSave: (GroomingPreferences savedPreferences) async {
+            // Determine if all fields in savedPreferences are null or empty
+            // This helps decide if we should set groomingPreferences to null on the Pet object
+            // or save the new (potentially all-empty) GroomingPreferences object.
+            // For V1, we save the object even if all its fields are null/empty,
+            // rather than setting pet.groomingPreferences itself to null.
+            // A "Remove Preferences" button could explicitly set it to null.
+
+            final updatedPet = pet.copyWith(groomingPreferences: savedPreferences);
+
+            try {
+              final updatePetAction = ref.read(updatePetProvider);
+              await updatePetAction(updatedPet);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Grooming preferences updated successfully!')),
+              );
+            } catch (e) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Error updating grooming preferences: ${e.toString()}')),
+              );
+            }
+            // PetDetailScreen will rebuild automatically.
+          },
+        );
+      },
+    );
   }
 }
